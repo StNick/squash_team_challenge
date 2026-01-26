@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build output
+.vinxi/
+dist/
+.output/
+
+# Environment files (use docker-compose env instead)
+.env
+.env.local
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Drizzle meta (regenerated)
+drizzle/meta/
+
+# Logs
+*.log
