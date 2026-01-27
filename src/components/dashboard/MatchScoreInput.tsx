@@ -67,18 +67,18 @@ export function MatchScoreInput({
         Position {match.position}
       </div>
 
-      <div className="flex items-center justify-center gap-2">
-        {/* Player A */}
+      {/* Desktop layout - names on sides */}
+      <div className="hidden md:flex items-center justify-center gap-2">
         <div className="flex-1 text-right">
           <div
-            className="text-sm font-medium truncate"
+            className="text-sm font-medium"
             style={{ color: getTeamTextColor(teamAColor) }}
           >
-            {match.playerA.name}
+            {match.playerA.name}{" "}
+            <span className="text-xs text-gray-500">[{match.playerA.skill}]</span>
           </div>
         </div>
 
-        {/* Score A Input */}
         <Input
           type="text"
           inputMode="numeric"
@@ -100,7 +100,6 @@ export function MatchScoreInput({
 
         <span className="text-gray-400 font-bold">-</span>
 
-        {/* Score B Input */}
         <Input
           type="text"
           inputMode="numeric"
@@ -120,13 +119,78 @@ export function MatchScoreInput({
           aria-label={`Score for ${match.playerB.name}`}
         />
 
-        {/* Player B */}
         <div className="flex-1 text-left">
           <div
-            className="text-sm font-medium truncate"
+            className="text-sm font-medium"
+            style={{ color: getTeamTextColor(teamBColor) }}
+          >
+            {match.playerB.name}{" "}
+            <span className="text-xs text-gray-500">[{match.playerB.skill}]</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile layout - names below score inputs */}
+      <div className="flex md:hidden flex-col gap-2">
+        <div className="flex items-center justify-center gap-2">
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={scoreA}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "" || (/^\d+$/.test(val) && parseInt(val) <= 999)) {
+                setScoreA(val);
+              }
+            }}
+            className={`w-20 h-12 text-center text-xl font-bold ${
+              hasExistingScores ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
+            style={{ borderColor: teamAColor }}
+            disabled={inputsDisabled}
+            aria-label={`Score for ${match.playerA.name}`}
+          />
+
+          <span className="text-gray-400 font-bold">-</span>
+
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={scoreB}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "" || (/^\d+$/.test(val) && parseInt(val) <= 999)) {
+                setScoreB(val);
+              }
+            }}
+            className={`w-20 h-12 text-center text-xl font-bold ${
+              hasExistingScores ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
+            style={{ borderColor: teamBColor }}
+            disabled={inputsDisabled}
+            aria-label={`Score for ${match.playerB.name}`}
+          />
+        </div>
+
+        <div className="flex justify-between px-2">
+          <div
+            className="text-sm font-medium text-left"
+            style={{ color: getTeamTextColor(teamAColor) }}
+          >
+            {match.playerA.name}
+            <br />
+            <span className="text-xs text-gray-500">[{match.playerA.skill}]</span>
+          </div>
+
+          <div
+            className="text-sm font-medium text-right"
             style={{ color: getTeamTextColor(teamBColor) }}
           >
             {match.playerB.name}
+            <br />
+            <span className="text-xs text-gray-500">[{match.playerB.skill}]</span>
           </div>
         </div>
       </div>

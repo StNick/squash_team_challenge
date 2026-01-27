@@ -105,7 +105,7 @@ function PlayersPage() {
                   <optgroup key={team.id} label={team.name}>
                     {teamPlayers.map((p) => (
                       <option key={p.id} value={p.id} disabled={p.id === playerB}>
-                        {p.name} ({p.skill}) - Pos {p.position}
+                        {p.name} [{p.skill}] - Pos {p.position}
                       </option>
                     ))}
                   </optgroup>
@@ -127,7 +127,7 @@ function PlayersPage() {
                   <optgroup key={team.id} label={team.name}>
                     {teamPlayers.map((p) => (
                       <option key={p.id} value={p.id} disabled={p.id === playerA}>
-                        {p.name} ({p.skill}) - Pos {p.position}
+                        {p.name} [{p.skill}] - Pos {p.position}
                       </option>
                     ))}
                   </optgroup>
@@ -172,7 +172,7 @@ function PlayersPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-gray-400 w-4">{player.position}.</span>
                           <span className={player.isCaptain ? "font-medium" : ""}>
-                            {player.name} ({player.skill})
+                            {player.name} [{player.skill}]
                           </span>
                           {player.isCaptain && (
                             <span

@@ -1,6 +1,6 @@
 "use client";
 
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { getDashboardData } from "~/server/functions/tournament";
 import { submitMatchScore } from "~/server/functions/matches";
@@ -83,6 +83,12 @@ function HomePage() {
               >
                 Need a Reserve?
               </Button>
+              <Link
+                to="/admin"
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Admin
+              </Link>
             </div>
           </div>
         </div>

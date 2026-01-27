@@ -90,7 +90,7 @@ function AdminLayout() {
             </div>
             <div className="flex items-center gap-3">
               <Link to="/" className="text-gray-300 hover:text-white text-sm">
-                View Site
+                Public Dashboard
               </Link>
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 Logout
