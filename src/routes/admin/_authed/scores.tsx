@@ -395,7 +395,7 @@ function ScoresPage() {
                                 {p.name} [{p.level}]
                               </option>
                             ))}
-                            <option value="custom">Non-member...</option>
+                            <option value="custom">Other player...</option>
                           </select>
                         )}
                       </td>
@@ -458,7 +458,7 @@ function ScoresPage() {
                                 {p.name} [{p.level}]
                               </option>
                             ))}
-                            <option value="custom">Non-member...</option>
+                            <option value="custom">Other player...</option>
                           </select>
                         )}
                       </td>
@@ -548,7 +548,7 @@ function ScoresPage() {
       <Modal
         isOpen={!!customSubModal}
         onClose={() => setCustomSubModal(null)}
-        title="Add Non-Member Substitute"
+        title="Add Other Player as Substitute"
       >
         <div className="space-y-4">
           <div>

@@ -167,7 +167,7 @@ function PlayersPage() {
                     .map((player) => (
                       <li
                         key={player.id}
-                        className="flex items-center justify-between text-sm"
+                        className="group flex items-center justify-between text-sm"
                       >
                         <span className="flex items-center gap-2">
                           <span className="text-gray-400 w-4">{player.position}.</span>
@@ -175,22 +175,22 @@ function PlayersPage() {
                             {player.name}
                           </span>
                           <span className="text-gray-400 text-xs">[{player.level.toLocaleString()}]</span>
-                          {player.isCaptain && (
+                          {player.isCaptain ? (
                             <span
                               className={`text-xs px-1.5 py-0.5 rounded ${colors.text} ${colors.bg}`}
                             >
                               C
                             </span>
+                          ) : (
+                            <button
+                              onClick={() => handleSetCaptain(player.id)}
+                              className="text-xs text-gray-300 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Make captain"
+                            >
+                              C
+                            </button>
                           )}
                         </span>
-                        {!player.isCaptain && (
-                          <button
-                            onClick={() => handleSetCaptain(player.id)}
-                            className="text-xs text-blue-600 hover:underline"
-                          >
-                            Make Captain
-                          </button>
-                        )}
                       </li>
                     ))}
                 </ul>
