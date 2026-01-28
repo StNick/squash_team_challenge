@@ -53,7 +53,7 @@ function ScoresPage() {
     side: "A" | "B";
   } | null>(null);
   const [customSubName, setCustomSubName] = useState("");
-  const [customSubSkill, setCustomSubSkill] = useState("");
+  const [customSubLevel, setCustomSubLevel] = useState("");
 
   // Track recommended handicaps for each match
   const [recommendedHandicaps, setRecommendedHandicaps] = useState<Record<number, number>>({});
@@ -144,7 +144,7 @@ function ScoresPage() {
     if (value === "custom") {
       setCustomSubModal({ matchId, side });
       setCustomSubName("");
-      setCustomSubSkill("");
+      setCustomSubLevel("");
       return;
     }
 
@@ -194,7 +194,7 @@ function ScoresPage() {
           side: customSubModal.side,
           type: "custom",
           customName: customSubName,
-          customSkill: customSubSkill ? parseInt(customSubSkill) : undefined,
+          customLevel: customSubLevel ? parseInt(customSubLevel) : undefined,
         },
       });
       setCustomSubModal(null);
@@ -237,26 +237,26 @@ function ScoresPage() {
 
   // Get substitute display (reserve or custom)
   const getSubstituteDisplay = (match: {
-    substituteA?: { id: number; name: string; skill: number } | null;
-    substituteB?: { id: number; name: string; skill: number } | null;
+    substituteA?: { id: number; name: string; level: number } | null;
+    substituteB?: { id: number; name: string; level: number } | null;
     customSubstituteAName?: string | null;
-    customSubstituteASkill?: number | null;
+    customSubstituteALevel?: number | null;
     customSubstituteBName?: string | null;
-    customSubstituteBSkill?: number | null;
+    customSubstituteBLevel?: number | null;
   }, side: "A" | "B"): string | null => {
     if (side === "A") {
       if (match.substituteA) {
-        return `${match.substituteA.name} [${match.substituteA.skill}]`;
+        return `${match.substituteA.name} [${match.substituteA.level}]`;
       }
       if (match.customSubstituteAName) {
-        return `${match.customSubstituteAName}${match.customSubstituteASkill ? ` [${match.customSubstituteASkill}]` : ""}`;
+        return `${match.customSubstituteAName}${match.customSubstituteALevel ? ` [${match.customSubstituteALevel}]` : ""}`;
       }
     } else {
       if (match.substituteB) {
-        return `${match.substituteB.name} [${match.substituteB.skill}]`;
+        return `${match.substituteB.name} [${match.substituteB.level}]`;
       }
       if (match.customSubstituteBName) {
-        return `${match.customSubstituteBName}${match.customSubstituteBSkill ? ` [${match.customSubstituteBSkill}]` : ""}`;
+        return `${match.customSubstituteBName}${match.customSubstituteBLevel ? ` [${match.customSubstituteBLevel}]` : ""}`;
       }
     }
     return null;
@@ -283,7 +283,7 @@ function ScoresPage() {
       <Card>
         <CardContent className="text-sm text-gray-600">
           <p className="font-medium text-gray-800 mb-1">Handicap System</p>
-          <p>Recommended handicap is calculated as half the skill advantage. For example, a player with 48% higher skill gets a 24% handicap applied to their actual score.</p>
+          <p>Recommended handicap is calculated as half the level advantage. For example, a player with 48% higher level gets a 24% handicap applied to their actual score.</p>
         </CardContent>
       </Card>
 
@@ -347,12 +347,12 @@ function ScoresPage() {
               <tbody>
                 {matchup.matches.map((match) => {
                   const matchWithSubs = match as typeof match & {
-                    substituteA?: { id: number; name: string; skill: number } | null;
-                    substituteB?: { id: number; name: string; skill: number } | null;
+                    substituteA?: { id: number; name: string; level: number } | null;
+                    substituteB?: { id: number; name: string; level: number } | null;
                     customSubstituteAName?: string | null;
-                    customSubstituteASkill?: number | null;
+                    customSubstituteALevel?: number | null;
                     customSubstituteBName?: string | null;
-                    customSubstituteBSkill?: number | null;
+                    customSubstituteBLevel?: number | null;
                     handicap?: number | null;
                   };
                   const currentHandicap = matchWithSubs.handicap ?? 0;
@@ -363,7 +363,7 @@ function ScoresPage() {
                       <td className="py-2 px-2 text-gray-400">{match.position}</td>
                       <td className="py-2 px-2">
                         <div className="text-sm">{match.playerA.name}</div>
-                        <div className="text-xs text-gray-400">[{match.playerA.skill}]</div>
+                        <div className="text-xs text-gray-400">[{match.playerA.level}]</div>
                       </td>
                       <td className="py-2 px-2">
                         {hasSubstitute(matchWithSubs, "A") ? (
@@ -392,7 +392,7 @@ function ScoresPage() {
                             <option value="none">None</option>
                             {playerDatabase.map((p) => (
                               <option key={`player-${p.id}`} value={`player:${p.id}`}>
-                                {p.name} [{p.skill}]
+                                {p.name} [{p.level}]
                               </option>
                             ))}
                             <option value="custom">Non-member...</option>
@@ -426,7 +426,7 @@ function ScoresPage() {
                       </td>
                       <td className="py-2 px-2">
                         <div className="text-sm">{match.playerB.name}</div>
-                        <div className="text-xs text-gray-400">[{match.playerB.skill}]</div>
+                        <div className="text-xs text-gray-400">[{match.playerB.level}]</div>
                       </td>
                       <td className="py-2 px-2">
                         {hasSubstitute(matchWithSubs, "B") ? (
@@ -455,7 +455,7 @@ function ScoresPage() {
                             <option value="none">None</option>
                             {playerDatabase.map((p) => (
                               <option key={`player-${p.id}`} value={`player:${p.id}`}>
-                                {p.name} [{p.skill}]
+                                {p.name} [{p.level}]
                               </option>
                             ))}
                             <option value="custom">Non-member...</option>
@@ -499,7 +499,7 @@ function ScoresPage() {
                             onClick={() => handleAutoHandicap(match.id)}
                             disabled={savingHandicap === match.id}
                             className="px-1 py-0 h-6 text-xs"
-                            title="Auto-calculate handicap based on skill difference"
+                            title="Auto-calculate handicap based on level difference"
                           >
                             Auto
                           </Button>
@@ -564,13 +564,13 @@ function ScoresPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Skill (optional)
+              Level (optional)
             </label>
             <Input
               type="text"
               inputMode="numeric"
-              value={customSubSkill}
-              onChange={(e) => setCustomSubSkill(e.target.value)}
+              value={customSubLevel}
+              onChange={(e) => setCustomSubLevel(e.target.value)}
               placeholder="e.g., 500000"
             />
             <p className="text-xs text-gray-500 mt-1">

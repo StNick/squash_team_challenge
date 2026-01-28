@@ -102,18 +102,18 @@ export const setCaptain = createServerFn({ method: "POST" })
 // Update player details
 export const updatePlayer = createServerFn({ method: "POST" })
   .inputValidator(
-    (data: { playerId: number; name?: string; skill?: number }) => data
+    (data: { playerId: number; name?: string; level?: number }) => data
   )
   .handler(async ({ data }) => {
-    const { playerId, name, skill } = data;
+    const { playerId, name, level } = data;
 
-    const updateData: Partial<{ name: string; skill: number }> = {};
+    const updateData: Partial<{ name: string; level: number }> = {};
     if (name !== undefined) updateData.name = name;
-    if (skill !== undefined) {
-      if (skill < 1 || skill > 1000000) {
-        throw new Error("Skill must be between 1 and 1,000,000");
+    if (level !== undefined) {
+      if (level < 1 || level > 1000000) {
+        throw new Error("Level must be between 1 and 1,000,000");
       }
-      updateData.skill = skill;
+      updateData.level = level;
     }
 
     await db

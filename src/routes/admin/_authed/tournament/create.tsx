@@ -69,10 +69,10 @@ function CreateTournamentPage() {
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .map((line) => {
-      const [name, skillStr, teamStr, captainStr] = line.split(",").map((s) => s.trim());
+      const [name, levelStr, teamStr, captainStr] = line.split(",").map((s) => s.trim());
       return {
         name,
-        skill: skillStr ? parseInt(skillStr) : 500000,
+        level: levelStr ? parseInt(levelStr) : 500000,
         team: teamStr || undefined,
         isCaptain: captainStr ? /^c(aptain)?$/i.test(captainStr) : false,
         source: "csv" as const,
@@ -82,7 +82,7 @@ function CreateTournamentPage() {
   // Get selected database players
   const selectedDbPlayers = databasePlayers
     .filter((p) => selectedPlayerIds.includes(p.id))
-    .map((p) => ({ name: p.name, skill: p.skill, source: "database" as const }));
+    .map((p) => ({ name: p.name, level: p.level, source: "database" as const }));
 
   // Combine all players
   const allPlayers = [...selectedDbPlayers, ...csvPlayers];
@@ -225,7 +225,7 @@ function CreateTournamentPage() {
                     />
                     <span className="flex-1">{player.name}</span>
                     <span className="text-sm text-gray-500 font-mono">
-                      {player.skill.toLocaleString()}
+                      {player.level.toLocaleString()}
                     </span>
                   </label>
                 ))}
@@ -238,7 +238,7 @@ function CreateTournamentPage() {
           <CardHeader>
             <h2 className="font-semibold text-gray-900">Additional Players (CSV)</h2>
             <p className="text-sm text-gray-500">
-              Format: name,skill,team,captain (all except name are optional). Skill: 1-1,000,000 (defaults to 500,000).
+              Format: name,level,team,captain (all except name are optional). Level: 1-1,000,000 (defaults to 500,000).
               Team: Red, Orange, Green, Black, White, Blue. Captain: use "C" to mark as team captain.
             </p>
           </CardHeader>
@@ -259,8 +259,8 @@ Alice Brown,650000,Blue,C`}
           <CardHeader>
             <h2 className="font-semibold text-gray-900">Reserves (CSV)</h2>
             <p className="text-sm text-gray-500">
-              Format: name,phone,skill (phone and skill are optional). Skill: 1-1,000,000.
-              The suggested level (1-4) is auto-calculated based on the tournament's player skill distribution.
+              Format: name,phone,level (phone and level are optional). Level: 1-1,000,000.
+              The suggested level (1-4) is auto-calculated based on the tournament's player level distribution.
             </p>
           </CardHeader>
           <CardContent>
@@ -309,7 +309,7 @@ Spencer Craft,021 174 7700,850000`}
                   <thead className="bg-gray-50 sticky top-0">
                     <tr className="border-b">
                       <th className="py-2 px-3 text-left">Name</th>
-                      <th className="py-2 px-3 text-right">Skill</th>
+                      <th className="py-2 px-3 text-right">Level</th>
                       <th className="py-2 px-3 text-center">Team</th>
                       <th className="py-2 px-3 text-center">C</th>
                       <th className="py-2 px-3 text-center">Source</th>
@@ -320,7 +320,7 @@ Spencer Craft,021 174 7700,850000`}
                       <tr key={i} className="border-b border-gray-100">
                         <td className="py-1 px-3">{player.name}</td>
                         <td className="py-1 px-3 text-right font-mono">
-                          {player.skill.toLocaleString()}
+                          {player.level.toLocaleString()}
                         </td>
                         <td className="py-1 px-3 text-center">
                           {"team" in player && player.team ? (

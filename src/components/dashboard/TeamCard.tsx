@@ -35,6 +35,7 @@ export function TeamCard({ team, rank }: TeamCardProps) {
                 <span className={player.isCaptain ? "font-medium" : ""}>
                   {player.name}
                 </span>
+                <span className="text-gray-400 text-xs">[{player.level.toLocaleString()}]</span>
                 {player.isCaptain && (
                   <span
                     className={`text-xs px-1.5 py-0.5 rounded ${colors.text} ${colors.bg}`}

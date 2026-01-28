@@ -8,15 +8,17 @@ export type ValidTeamName = (typeof VALID_TEAM_NAMES)[number];
 
 export interface PlayerInput {
   name: string;
-  skill: number;
+  level: number;
+  playerCode?: string; // MySquash unique identifier
   team?: string; // Optional team name: Red, Orange, Green, Black, White, Blue, etc.
   isCaptain?: boolean; // Optional captain designation
 }
 
-// Player in a generated team - skill is always required
+// Player in a generated team - level is always required
 export interface GeneratedPlayer {
   name: string;
-  skill: number;
+  level: number;
+  playerCode?: string;
   position: number;
   isCaptain: boolean;
 }
@@ -33,7 +35,7 @@ export interface GeneratedSchedule {
 
 /**
  * Snake draft algorithm to distribute players evenly across teams
- * Players are sorted by skill (descending), then distributed in a snake pattern:
+ * Players are sorted by level (descending), then distributed in a snake pattern:
  * Round 1: Team 0, 1, 2, 3
  * Round 2: Team 3, 2, 1, 0
  * Round 3: Team 0, 1, 2, 3
@@ -92,7 +94,7 @@ export function distributePlayersToTeams(
     }
   }
 
-  // Assign pre-assigned players to their teams (sorted by skill within each team)
+  // Assign pre-assigned players to their teams (sorted by level within each team)
   const preAssignedByTeam = new Map<number, PlayerInput[]>();
   for (const player of preAssignedPlayers) {
     const teamIndex = teamNameToIndex.get(player.team!.toLowerCase().trim())!;
@@ -102,22 +104,23 @@ export function distributePlayersToTeams(
     preAssignedByTeam.get(teamIndex)!.push(player);
   }
 
-  // Sort pre-assigned players by skill and add to teams
+  // Sort pre-assigned players by level and add to teams
   for (const [teamIndex, teamPlayers] of preAssignedByTeam) {
-    teamPlayers.sort((a, b) => b.skill - a.skill);
+    teamPlayers.sort((a, b) => b.level - a.level);
     for (const player of teamPlayers) {
       const position = teams[teamIndex].players.length + 1;
       teams[teamIndex].players.push({
         name: player.name,
-        skill: player.skill,
+        level: player.level,
+        playerCode: player.playerCode,
         position,
         isCaptain: player.isCaptain === true, // Preserve explicit captain designation
       });
     }
   }
 
-  // Sort remaining unassigned players by skill descending for snake draft
-  const sortedUnassigned = [...unassignedPlayers].sort((a, b) => b.skill - a.skill);
+  // Sort remaining unassigned players by level descending for snake draft
+  const sortedUnassigned = [...unassignedPlayers].sort((a, b) => b.level - a.level);
 
   // Snake draft remaining players to fill gaps
   // First, determine how many spots each team needs
@@ -144,7 +147,8 @@ export function distributePlayersToTeams(
     const position = teams[teamIndex].players.length + 1;
     teams[teamIndex].players.push({
       name: player.name,
-      skill: player.skill,
+      level: player.level,
+      playerCode: player.playerCode,
       position,
       isCaptain: player.isCaptain === true, // Preserve explicit captain designation
     });
@@ -160,16 +164,16 @@ export function distributePlayersToTeams(
     }
   }
 
-  // Re-sort players within each team by skill and assign positions
+  // Re-sort players within each team by level and assign positions
   teams.forEach((team) => {
-    team.players.sort((a, b) => b.skill - a.skill);
+    team.players.sort((a, b) => b.level - a.level);
 
     // Check if any player is explicitly marked as captain
     const hasExplicitCaptain = team.players.some((p) => p.isCaptain === true);
 
     team.players.forEach((player, index) => {
       player.position = index + 1;
-      // If no explicit captain, default to position 1 (highest skill)
+      // If no explicit captain, default to position 1 (highest level)
       if (!hasExplicitCaptain) {
         player.isCaptain = index === 0;
       }
@@ -304,13 +308,13 @@ export function assignFirstOnCourt(
 export interface ReserveInput {
   name: string;
   phone?: string;
-  skill?: number; // Skill value 1-1,000,000, used to calculate suggested level
+  level?: number; // Level value 1-1,000,000, used to calculate suggested level
 }
 
 /**
  * Parse CSV input for reserves
- * Expected format: name,phone,skill (one per line)
- * Phone and skill are optional. Skill must be 1-1,000,000 if provided.
+ * Expected format: name,phone,level (one per line)
+ * Phone and level are optional. Level must be 1-1,000,000 if provided.
  */
 export function parseReservesCsv(csv: string): ReserveInput[] {
   const lines = csv
@@ -319,32 +323,32 @@ export function parseReservesCsv(csv: string): ReserveInput[] {
     .filter((line) => line.length > 0);
 
   return lines.map((line) => {
-    const [name, phone, skillStr] = line.split(",").map((s) => s.trim());
+    const [name, phone, levelStr] = line.split(",").map((s) => s.trim());
 
     if (!name) {
       throw new Error("Reserve name is required");
     }
 
-    const skill = skillStr ? parseInt(skillStr, 10) : undefined;
+    const level = levelStr ? parseInt(levelStr, 10) : undefined;
     if (
-      skill !== undefined &&
-      (isNaN(skill) || skill < 1 || skill > 1000000)
+      level !== undefined &&
+      (isNaN(level) || level < 1 || level > 1000000)
     ) {
-      throw new Error(`Invalid skill value for ${name}: must be 1-1,000,000`);
+      throw new Error(`Invalid level value for ${name}: must be 1-1,000,000`);
     }
 
     return {
       name,
       phone: phone || undefined,
-      skill,
+      level,
     };
   });
 }
 
 /**
  * Parse CSV input for players
- * Expected format: name,skill,team,captain (one per line)
- * skill is optional (defaults to 500000)
+ * Expected format: name,level,team,captain (one per line)
+ * level is optional (defaults to 500000)
  * team is optional (if omitted, player will be snake drafted)
  * captain is optional (use "C" or "c" to mark as captain)
  */
@@ -355,15 +359,15 @@ export function parsePlayersCsv(csv: string): PlayerInput[] {
     .filter((line) => line.length > 0);
 
   return lines.map((line) => {
-    const [name, skillStr, teamStr, captainStr] = line.split(",").map((s) => s.trim());
-    const skill = skillStr ? parseInt(skillStr, 10) : 500000;
+    const [name, levelStr, teamStr, captainStr] = line.split(",").map((s) => s.trim());
+    const level = levelStr ? parseInt(levelStr, 10) : 500000;
 
     if (!name) {
       throw new Error("Player name is required");
     }
 
-    if (isNaN(skill) || skill < 1 || skill > 1000000) {
-      throw new Error(`Invalid skill value for ${name}: must be 1-1,000,000`);
+    if (isNaN(level) || level < 1 || level > 1000000) {
+      throw new Error(`Invalid level value for ${name}: must be 1-1,000,000`);
     }
 
     const team = teamStr || undefined;
@@ -372,44 +376,44 @@ export function parsePlayersCsv(csv: string): PlayerInput[] {
     // Check for captain designation (C, c, Captain, captain, etc.)
     const isCaptain = captainStr ? /^c(aptain)?$/i.test(captainStr) : undefined;
 
-    return { name, skill, team, isCaptain };
+    return { name, level, team, isCaptain };
   });
 }
 
 // =============================================================================
-// Skill Range and Suggested Level Calculation
+// Level Range and Suggested Level Calculation
 // =============================================================================
 
-export interface PositionSkillRange {
+export interface PositionLevelRange {
   position: number;
-  minSkill: number;
-  maxSkill: number;
+  minLevel: number;
+  maxLevel: number;
 }
 
 /**
- * Calculate min/max skill for each position (1-4) from tournament players
+ * Calculate min/max level for each position (1-4) from tournament players
  */
-export function calculatePositionSkillRanges(
-  players: { skill: number; position: number }[]
-): PositionSkillRange[] {
+export function calculatePositionLevelRanges(
+  players: { level: number; position: number }[]
+): PositionLevelRange[] {
   // Group players by position
   const byPosition = new Map<number, number[]>();
   for (const player of players) {
     if (!byPosition.has(player.position)) {
       byPosition.set(player.position, []);
     }
-    byPosition.get(player.position)!.push(player.skill);
+    byPosition.get(player.position)!.push(player.level);
   }
 
   // Calculate ranges for positions 1-4
-  const ranges: PositionSkillRange[] = [];
+  const ranges: PositionLevelRange[] = [];
   for (let position = 1; position <= 4; position++) {
-    const skills = byPosition.get(position) || [];
-    if (skills.length > 0) {
+    const levels = byPosition.get(position) || [];
+    if (levels.length > 0) {
       ranges.push({
         position,
-        minSkill: Math.min(...skills),
-        maxSkill: Math.max(...skills),
+        minLevel: Math.min(...levels),
+        maxLevel: Math.max(...levels),
       });
     }
   }
@@ -418,28 +422,28 @@ export function calculatePositionSkillRanges(
 }
 
 /**
- * Determine suggested level (1-4) for a skill value based on position ranges
- * Uses the midpoint of each position's skill range
+ * Determine suggested level (1-4) for a level value based on position ranges
+ * Uses the midpoint of each position's level range
  */
 export function calculateSuggestedLevel(
-  skill: number,
-  ranges: PositionSkillRange[]
+  level: number,
+  ranges: PositionLevelRange[]
 ): number {
   if (ranges.length === 0) return 2; // Default to level 2 if no data
 
   // Sort ranges by position
   const sortedRanges = [...ranges].sort((a, b) => a.position - b.position);
 
-  // Find which position range the skill fits into
-  // Higher skill = lower position number (1 = best)
+  // Find which position range the level fits into
+  // Higher level = lower position number (1 = best)
   for (const range of sortedRanges) {
-    const midpoint = (range.minSkill + range.maxSkill) / 2;
-    if (skill >= midpoint) {
+    const midpoint = (range.minLevel + range.maxLevel) / 2;
+    if (level >= midpoint) {
       return range.position;
     }
   }
 
-  // If skill is lower than all ranges, return the last (lowest) position
+  // If level is lower than all ranges, return the last (lowest) position
   return sortedRanges[sortedRanges.length - 1]?.position || 4;
 }
 
@@ -528,39 +532,29 @@ export function parseMatchupSchedule(
 }
 
 /**
- * Extract level from notes string
- * Looks for patterns like "Suggested level: 2" or "Level 2 or 3"
- */
-export function extractLevelFromNotes(notes: string | null): string | null {
-  if (!notes) return null;
-  const match = notes.match(/level[:\s]*(\d(?:\s*(?:or|\/|-)\s*\d)?)/i);
-  return match ? match[1] : null;
-}
-
-/**
- * Calculate suggested handicap percentage based on skill difference between two players.
+ * Calculate suggested handicap percentage based on level difference between two players.
  * Returns positive if player A's score should be reduced (A is stronger).
  * Returns negative if player B's score should be reduced (B is stronger).
  *
- * Formula: Handicap % = (Skill Difference / Higher Skill) × 50
+ * Formula: Handicap % = (Level Difference / Higher Level) × 50
  * Rounded to nearest 5% increment.
  *
- * Example: 1500 vs 780 skill
+ * Example: 1500 vs 780 level
  * - Difference = 720
  * - Handicap % = (720 / 1500) × 50 = 24%
  * - A's score would be reduced by 24% (multiplied by 0.76)
  */
-export function calculateSuggestedHandicap(skillA: number, skillB: number): number {
-  const higherSkill = Math.max(skillA, skillB);
-  const lowerSkill = Math.min(skillA, skillB);
-  const difference = higherSkill - lowerSkill;
+export function calculateSuggestedHandicap(levelA: number, levelB: number): number {
+  const higherLevel = Math.max(levelA, levelB);
+  const lowerLevel = Math.min(levelA, levelB);
+  const difference = higherLevel - lowerLevel;
 
   // Calculate raw percentage
-  const rawPercent = (difference / higherSkill) * 50;
+  const rawPercent = (difference / higherLevel) * 50;
 
   // Round to nearest 5
   const roundedPercent = Math.round(rawPercent / 5) * 5;
 
   // Return positive if A is stronger, negative if B is stronger
-  return skillA >= skillB ? roundedPercent : -roundedPercent;
+  return levelA >= levelB ? roundedPercent : -roundedPercent;
 }

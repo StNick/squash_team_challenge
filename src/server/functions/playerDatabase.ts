@@ -33,20 +33,20 @@ export const createPlayerDatabaseEntry = createServerFn({ method: "POST" })
       name: string;
       email?: string;
       phone?: string;
-      skill?: number;
+      level?: number;
       notes?: string;
     }) => data
   )
   .handler(async ({ data }) => {
-    const { name, email, phone, skill, notes } = data;
+    const { name, email, phone, level, notes } = data;
 
     if (!name.trim()) {
       throw new Error("Name is required");
     }
 
-    // Validate skill if provided
-    if (skill !== undefined && (skill < 1 || skill > 1000000)) {
-      throw new Error("Skill must be between 1 and 1,000,000");
+    // Validate level if provided
+    if (level !== undefined && (level < 1 || level > 1000000)) {
+      throw new Error("Level must be between 1 and 1,000,000");
     }
 
     const [player] = await db
@@ -55,7 +55,7 @@ export const createPlayerDatabaseEntry = createServerFn({ method: "POST" })
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
-        skill: skill ?? 0,
+        level: level ?? 0,
         notes: notes?.trim() || null,
         isActive: true,
       })
@@ -72,13 +72,13 @@ export const updatePlayerDatabaseEntry = createServerFn({ method: "POST" })
       name?: string;
       email?: string | null;
       phone?: string | null;
-      skill?: number;
+      level?: number;
       notes?: string | null;
       isActive?: boolean;
     }) => data
   )
   .handler(async ({ data }) => {
-    const { playerId, name, email, phone, skill, notes, isActive } = data;
+    const { playerId, name, email, phone, level, notes, isActive } = data;
 
     // Get current player to check contact validation
     const currentPlayer = await db.query.playerDatabase.findFirst({
@@ -94,7 +94,7 @@ export const updatePlayerDatabaseEntry = createServerFn({ method: "POST" })
       name: string;
       email: string | null;
       phone: string | null;
-      skill: number;
+      level: number;
       notes: string | null;
       isActive: boolean;
       updatedAt: Date;
@@ -117,11 +117,11 @@ export const updatePlayerDatabaseEntry = createServerFn({ method: "POST" })
       updateData.phone = phone?.trim() || null;
     }
 
-    if (skill !== undefined) {
-      if (skill < 1 || skill > 1000000) {
-        throw new Error("Skill must be between 1 and 1,000,000");
+    if (level !== undefined) {
+      if (level < 1 || level > 1000000) {
+        throw new Error("Level must be between 1 and 1,000,000");
       }
-      updateData.skill = skill;
+      updateData.level = level;
     }
 
     if (notes !== undefined) {
@@ -277,7 +277,7 @@ export const importPlayersFromCsv = createServerFn({ method: "POST" })
           .set({
             name,
             playerCode,
-            skill: level,
+            level: level,
             updatedAt: new Date(),
           })
           .where(eq(playerDatabase.id, existingPlayer.id));
@@ -294,7 +294,7 @@ export const importPlayersFromCsv = createServerFn({ method: "POST" })
         await db.insert(playerDatabase).values({
           name,
           playerCode,
-          skill: level,
+          level: level,
           isActive: true,
         });
         imported++;

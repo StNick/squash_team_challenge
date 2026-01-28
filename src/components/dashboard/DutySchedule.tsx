@@ -4,7 +4,7 @@ interface DutyScheduleProps {
   duties: (WeeklyDuty & {
     dinnerTeam: Team;
     cleanupTeam: Team;
-    firstOnCourt?: number; // Level 1-4
+    firstOnCourt?: number; // Position 1-4
   })[];
   currentWeek: number;
 }
@@ -74,7 +74,7 @@ export function DutySchedule({ duties, currentWeek }: DutyScheduleProps) {
               <td className="py-2 px-3">
                 {duty.firstOnCourt ? (
                   <span className="text-sm text-gray-700">
-                    Level {duty.firstOnCourt}
+                    Position {duty.firstOnCourt}
                   </span>
                 ) : (
                   <span className="text-gray-400">-</span>

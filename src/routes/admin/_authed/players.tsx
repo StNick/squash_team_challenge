@@ -105,7 +105,7 @@ function PlayersPage() {
                   <optgroup key={team.id} label={team.name}>
                     {teamPlayers.map((p) => (
                       <option key={p.id} value={p.id} disabled={p.id === playerB}>
-                        {p.name} [{p.skill}] - Pos {p.position}
+                        {p.name} [{p.level}] - Pos {p.position}
                       </option>
                     ))}
                   </optgroup>
@@ -127,7 +127,7 @@ function PlayersPage() {
                   <optgroup key={team.id} label={team.name}>
                     {teamPlayers.map((p) => (
                       <option key={p.id} value={p.id} disabled={p.id === playerA}>
-                        {p.name} [{p.skill}] - Pos {p.position}
+                        {p.name} [{p.level}] - Pos {p.position}
                       </option>
                     ))}
                   </optgroup>
@@ -156,24 +156,25 @@ function PlayersPage() {
         {Object.values(playersByTeam).map(({ team, players: teamPlayers }) => {
           const colors = getTeamColorClasses(team.color);
           return (
-            <Card key={team.id}>
+            <Card key={team.id} className="h-full">
               <CardHeader className={`${colors.bg} ${colors.text}`}>
-                <h3 className="font-bold">{team.name}</h3>
+                <h3 className="font-bold text-lg">{team.name}</h3>
               </CardHeader>
-              <CardContent className="p-0">
-                <ul>
+              <CardContent className="p-3">
+                <ul className="space-y-2">
                   {teamPlayers
                     .sort((a, b) => a.position - b.position)
                     .map((player) => (
                       <li
                         key={player.id}
-                        className="flex items-center justify-between px-3 py-2 border-b border-gray-100 last:border-b-0"
+                        className="flex items-center justify-between text-sm"
                       >
-                        <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-2">
                           <span className="text-gray-400 w-4">{player.position}.</span>
                           <span className={player.isCaptain ? "font-medium" : ""}>
-                            {player.name} [{player.skill}]
+                            {player.name}
                           </span>
+                          <span className="text-gray-400 text-xs">[{player.level.toLocaleString()}]</span>
                           {player.isCaptain && (
                             <span
                               className={`text-xs px-1.5 py-0.5 rounded ${colors.text} ${colors.bg}`}
@@ -181,7 +182,7 @@ function PlayersPage() {
                               C
                             </span>
                           )}
-                        </div>
+                        </span>
                         {!player.isCaptain && (
                           <button
                             onClick={() => handleSetCaptain(player.id)}

@@ -8,6 +8,7 @@ import {
   deleteReserve,
   toggleReserveActive,
   addReservesFromDatabase,
+  updateReserveLevelsFromDatabase,
 } from "~/server/functions/reserves";
 import { getActivePlayerDatabase } from "~/server/functions/playerDatabase";
 import { Button } from "~/components/ui/Button";
@@ -40,12 +41,15 @@ function ReservesPage() {
     phone: "",
     email: "",
     notes: "",
-    skill: 500000,
+    level: 500000,
+    suggestedPosition: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUpdatingLevels, setIsUpdatingLevels] = useState(false);
+  const [updateLevelsResult, setUpdateLevelsResult] = useState<number | null>(null);
 
   const resetForm = () => {
-    setFormData({ name: "", phone: "", email: "", notes: "", skill: 500000 });
+    setFormData({ name: "", phone: "", email: "", notes: "", level: 500000, suggestedPosition: "" });
     setShowAddModal(false);
     setEditingReserve(null);
     setSelectedPlayerIds([]);
@@ -88,7 +92,8 @@ function ReservesPage() {
           phone: formData.phone,
           email: formData.email,
           notes: formData.notes,
-          skill: formData.skill,
+          level: formData.level,
+          suggestedPosition: formData.suggestedPosition || null,
         },
       });
       resetForm();
@@ -120,6 +125,20 @@ function ReservesPage() {
     }
   };
 
+  const handleUpdateLevels = async () => {
+    setIsUpdatingLevels(true);
+    setUpdateLevelsResult(null);
+    try {
+      const result = await updateReserveLevelsFromDatabase();
+      setUpdateLevelsResult(result.updated);
+      router.invalidate();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update levels");
+    } finally {
+      setIsUpdatingLevels(false);
+    }
+  };
+
   const openEditModal = (reserve: typeof reserves[0]) => {
     setEditingReserve(reserve);
     setFormData({
@@ -127,7 +146,8 @@ function ReservesPage() {
       phone: reserve.phone ?? "",
       email: reserve.email ?? "",
       notes: reserve.notes ?? "",
-      skill: reserve.skill ?? 500000,
+      level: reserve.level ?? 500000,
+      suggestedPosition: reserve.suggestedPosition ?? "",
     });
   };
 
@@ -141,15 +161,45 @@ function ReservesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Manage Reserves</h1>
-        <Button
-          onClick={() => setShowAddModal(true)}
-          disabled={availablePlayers.length === 0}
-        >
-          Add from Player Database
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleUpdateLevels}
+            disabled={isUpdatingLevels || reserves.length === 0}
+          >
+            {isUpdatingLevels ? "Updating..." : "Update Levels"}
+          </Button>
+          <Button
+            onClick={() => setShowAddModal(true)}
+            disabled={availablePlayers.length === 0}
+          >
+            Add from Player Database
+          </Button>
+        </div>
       </div>
+
+      {/* Update levels result message */}
+      {updateLevelsResult !== null && (
+        <Card>
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-green-700">
+                {updateLevelsResult === 0
+                  ? "All levels are already up to date."
+                  : `Updated levels for ${updateLevelsResult} reserve${updateLevelsResult === 1 ? "" : "s"}.`}
+              </p>
+              <button
+                onClick={() => setUpdateLevelsResult(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {availablePlayers.length === 0 && databasePlayers.length === 0 && (
         <Card>
@@ -179,7 +229,8 @@ function ReservesPage() {
               <thead>
                 <tr className="border-b border-gray-200 text-sm text-gray-500">
                   <th className="py-3 px-4 text-left">Name</th>
-                  <th className="py-3 px-4 text-center">Skill</th>
+                  <th className="py-3 px-4 text-center">Position</th>
+                  <th className="py-3 px-4 text-center">Level</th>
                   <th className="py-3 px-4 text-left hidden sm:table-cell">Phone</th>
                   <th className="py-3 px-4 text-left hidden md:table-cell">Email</th>
                   <th className="py-3 px-4 text-center">Status</th>
@@ -199,8 +250,17 @@ function ReservesPage() {
                         )}
                       </td>
                       <td className="py-3 px-4 text-center">
+                        {reserve.suggestedPosition ? (
+                          <span className="text-xs font-medium px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                            {reserve.suggestedPosition}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-center">
                         <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                          {reserve.skill?.toLocaleString() ?? "500,000"}
+                          {reserve.level?.toLocaleString() ?? "500,000"}
                         </span>
                       </td>
                       <td className="py-3 px-4 hidden sm:table-cell">
@@ -378,24 +438,42 @@ function ReservesPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Skill Rating (1-1,000,000)
-            </label>
-            <Input
-              type="number"
-              min={1}
-              max={1000000}
-              value={formData.skill}
-              onChange={(e) =>
-                setFormData({ ...formData, skill: parseInt(e.target.value) || 500000 })
-              }
-              placeholder="500000"
-              className="w-full"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Higher = stronger player. Used for handicap calculations.
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Suggested Position
+              </label>
+              <Input
+                value={formData.suggestedPosition}
+                onChange={(e) =>
+                  setFormData({ ...formData, suggestedPosition: e.target.value })
+                }
+                placeholder="e.g. 1, 1-2, 2-3"
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Position for public display
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Level (1-1,000,000)
+              </label>
+              <Input
+                type="number"
+                min={1}
+                max={1000000}
+                value={formData.level}
+                onChange={(e) =>
+                  setFormData({ ...formData, level: parseInt(e.target.value) || 500000 })
+                }
+                placeholder="500000"
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Higher = stronger player
+              </p>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">

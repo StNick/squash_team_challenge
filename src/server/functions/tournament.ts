@@ -22,7 +22,7 @@ import {
   parseDutiesOrder,
   parseFirstOnCourtOrder,
   parseMatchupSchedule,
-  calculatePositionSkillRanges,
+  calculatePositionLevelRanges,
   calculateSuggestedLevel,
   type PlayerInput,
 } from "../lib/generation";
@@ -169,7 +169,8 @@ export const createTournament = createServerFn({ method: "POST" })
       });
       dbPlayers = dbPlayerRecords.map((p) => ({
         name: p.name,
-        skill: p.skill,
+        level: p.level,
+        playerCode: p.playerCode ?? undefined,
       }));
     }
 
@@ -187,7 +188,7 @@ export const createTournament = createServerFn({ method: "POST" })
           // Add new player to database
           await db.insert(playerDatabase).values({
             name: csvPlayer.name,
-            skill: csvPlayer.skill,
+            level: csvPlayer.level,
             isActive: true,
           });
           existingNames.add(normalizedName);
@@ -245,7 +246,8 @@ export const createTournament = createServerFn({ method: "POST" })
           tournamentId: tournament.id,
           teamId: team.id,
           name: playerData.name,
-          skill: playerData.skill,
+          playerCode: playerData.playerCode ?? null,
+          level: playerData.level,
           position: playerData.position,
           isCaptain: playerData.isCaptain,
         });
@@ -445,11 +447,11 @@ export const createTournament = createServerFn({ method: "POST" })
       }
     }
 
-    // Calculate skill ranges from tournament players for reserve level calculation
+    // Calculate level ranges from tournament players for reserve level calculation
     const allTournamentPlayers = await db.query.players.findMany({
       where: eq(players.tournamentId, tournament.id),
     });
-    const skillRanges = calculatePositionSkillRanges(allTournamentPlayers);
+    const levelRanges = calculatePositionLevelRanges(allTournamentPlayers);
 
     // Create reserves from CSV
     if (reservesCsv?.trim()) {
@@ -462,40 +464,40 @@ export const createTournament = createServerFn({ method: "POST" })
         });
 
         let playerDbId: number | null = existingPlayer?.id ?? null;
-        let reserveSkill = reserve.skill;
+        let reserveLevel = reserve.level;
 
         if (!existingPlayer) {
-          // Use provided skill or default to 500000
-          const skillValue = reserve.skill ?? 500000;
+          // Use provided level or default to 500000
+          const levelValue = reserve.level ?? 500000;
           const [newPlayer] = await db
             .insert(playerDatabase)
             .values({
               name: reserve.name,
               phone: reserve.phone || null,
-              skill: skillValue,
+              level: levelValue,
               isActive: true,
             })
             .returning();
           playerDbId = newPlayer.id;
-          reserveSkill = skillValue;
+          reserveLevel = levelValue;
         } else {
-          // Update player database with skill if provided
-          if (reserve.skill !== undefined) {
+          // Update player database with level if provided
+          if (reserve.level !== undefined) {
             await db
               .update(playerDatabase)
-              .set({ skill: reserve.skill })
+              .set({ level: reserve.level })
               .where(eq(playerDatabase.id, existingPlayer.id));
-            reserveSkill = reserve.skill;
+            reserveLevel = reserve.level;
           } else {
-            reserveSkill = existingPlayer.skill;
+            reserveLevel = existingPlayer.level;
           }
         }
 
-        // Calculate suggested level based on skill and tournament player skill ranges
-        let suggestedLevelNote: string | null = null;
-        if (reserveSkill !== undefined && skillRanges.length > 0) {
-          const suggestedLevel = calculateSuggestedLevel(reserveSkill, skillRanges);
-          suggestedLevelNote = `Suggested level: ${suggestedLevel}`;
+        // Calculate suggested position based on level and tournament player level ranges
+        let suggestedPosition: string | null = null;
+        if (reserveLevel !== undefined && levelRanges.length > 0) {
+          const position = calculateSuggestedLevel(reserveLevel, levelRanges);
+          suggestedPosition = String(position);
         }
 
         // Create reserve entry for tournament
@@ -504,7 +506,8 @@ export const createTournament = createServerFn({ method: "POST" })
           playerDatabaseId: playerDbId,
           name: reserve.name,
           phone: reserve.phone || null,
-          notes: suggestedLevelNote,
+          level: reserveLevel ?? 500000,
+          suggestedPosition,
           isActive: true,
         });
       }

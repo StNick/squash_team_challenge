@@ -53,18 +53,18 @@ src/
 **Core Tables:**
 - `tournaments` - Tournament metadata (name, weeks, current week)
 - `teams` - Teams with color and total score
-- `players` - Players with skill rating (1-1M) and position (1-5)
+- `players` - Players with level rating (1-1M), position (1-5), and playerCode (MySquash identifier)
 - `weeklyMatchups` - Team vs team pairings per week
 - `matches` - Individual player matches with scores, substitutes, and handicaps
 - `weeklyDuties` - Dinner/cleanup team assignments
-- `playerDatabase` - Global player directory (reusable across tournaments)
-- `reserves` - Reserve players with skill ratings for active tournament
+- `playerDatabase` - Global player directory with playerCode (reusable across tournaments)
+- `reserves` - Reserve players with level ratings for active tournament
 - `firstOnCourt` - Which position group plays first each week
 - `adminSettings` - Password hash for admin auth
 
 **Key Match Columns:**
 - `substituteAId` / `substituteBId` - Links to reserve players
-- `customSubstituteAName/Skill` / `customSubstituteBName/Skill` - For non-member substitutes
+- `customSubstituteAName/Level` / `customSubstituteBName/Level` - For non-member substitutes
 - `handicap` - Percentage adjustment (positive = A reduced, negative = B reduced)
 
 ## Key Features
@@ -80,11 +80,11 @@ src/
 - **Tournament Creation**: Configure teams, import players via CSV, auto-generate schedules
 - **Player Management**: Swap players between teams, set captains, adjust positions
 - **Score Management**: Edit/correct match scores, assign substitutes, set handicaps
-- **Reserve Management**: Add/edit reserve players, link to player database, set skill ratings
+- **Reserve Management**: Add/edit reserve players, link to player database, set level ratings, update levels from database
 - **Settings**: Change admin password
 
 ### Handicap System
-- Recommended handicap = half the skill advantage between players
+- Recommended handicap = half the level advantage between players
 - Applied to the stronger player's score (e.g., 24% handicap reduces their score by 24%)
 - Admin can auto-calculate or manually set handicaps per match
 
@@ -103,16 +103,17 @@ All server functions are in `src/server/functions/`:
 | `setCaptain()` | Designate team captain |
 | `setMatchSubstitute()` | Assign reserve/custom substitute to a match |
 | `setMatchHandicap()` | Set handicap percentage for a match |
-| `getSuggestedHandicap()` | Calculate recommended handicap from skill difference |
+| `getSuggestedHandicap()` | Calculate recommended handicap from level difference |
+| `updateReserveLevelsFromDatabase()` | Update reserve levels from player database |
 
 ## Generation Algorithms
 
 Located in `src/server/lib/generation.ts`:
 
-- **Snake Draft**: Distributes players evenly across teams by skill
+- **Snake Draft**: Distributes players evenly across teams by level
 - **Round-Robin**: Generates balanced weekly matchups
 - **Duty Rotation**: Assigns dinner/cleanup duties
-- **First on Court**: Randomizes which skill level plays first
+- **First on Court**: Randomizes which level plays first
 
 ## Authentication
 

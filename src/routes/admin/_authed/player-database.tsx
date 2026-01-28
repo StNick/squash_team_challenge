@@ -32,7 +32,7 @@ function PlayerDatabasePage() {
     name: "",
     email: "",
     phone: "",
-    skill: "0",
+    level: "0",
     notes: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +51,7 @@ function PlayerDatabasePage() {
   const [isClearing, setIsClearing] = useState(false);
 
   const resetForm = () => {
-    setFormData({ name: "", email: "", phone: "", skill: "0", notes: "" });
+    setFormData({ name: "", email: "", phone: "", level: "0", notes: "" });
     setShowAddModal(false);
     setEditingPlayer(null);
     setError(null);
@@ -72,7 +72,7 @@ function PlayerDatabasePage() {
           name: formData.name,
           email: formData.email || undefined,
           phone: formData.phone || undefined,
-          skill: parseInt(formData.skill) || 500000,
+          level: parseInt(formData.level) || 500000,
           notes: formData.notes || undefined,
         },
       });
@@ -101,7 +101,7 @@ function PlayerDatabasePage() {
           name: formData.name,
           email: formData.email || null,
           phone: formData.phone || null,
-          skill: parseInt(formData.skill) || 500000,
+          level: parseInt(formData.level) || 500000,
           notes: formData.notes || null,
         },
       });
@@ -192,7 +192,7 @@ function PlayerDatabasePage() {
       name: player.name,
       email: player.email ?? "",
       phone: player.phone ?? "",
-      skill: player.skill.toString(),
+      level: player.level.toString(),
       notes: player.notes ?? "",
     });
     setError(null);
@@ -294,7 +294,7 @@ function PlayerDatabasePage() {
                   <th className="py-3 px-4 text-left hidden lg:table-cell">Code</th>
                   <th className="py-3 px-4 text-left hidden sm:table-cell">Email</th>
                   <th className="py-3 px-4 text-left hidden md:table-cell">Phone</th>
-                  <th className="py-3 px-4 text-right">Skill</th>
+                  <th className="py-3 px-4 text-right">Level</th>
                   <th className="py-3 px-4 text-center">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -320,7 +320,7 @@ function PlayerDatabasePage() {
                       {player.phone || "-"}
                     </td>
                     <td className="py-3 px-4 text-right font-mono text-sm">
-                      {player.skill.toLocaleString()}
+                      {player.level.toLocaleString()}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
@@ -413,15 +413,15 @@ function PlayerDatabasePage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Skill (1 - 1,000,000)
+              Level (1 - 1,000,000)
             </label>
             <Input
               type="number"
               min={1}
               max={1000000}
-              value={formData.skill}
+              value={formData.level}
               onChange={(e) =>
-                setFormData({ ...formData, skill: e.target.value })
+                setFormData({ ...formData, level: e.target.value })
               }
               placeholder="0"
               className="w-full"

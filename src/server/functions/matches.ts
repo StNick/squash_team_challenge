@@ -197,7 +197,7 @@ export const getMatchesForWeek = createServerFn({ method: "GET" })
 // Substitute types:
 // - "reserve": Use an existing reserve (by reserveId)
 // - "playerDatabase": Use a player from the database (by playerDatabaseId) - stores as custom substitute
-// - "custom": Use a custom name/skill for non-members
+// - "custom": Use a custom name/level for non-members
 export type SubstituteType = "reserve" | "playerDatabase" | "custom" | "none";
 
 export interface SubstituteInput {
@@ -207,23 +207,23 @@ export interface SubstituteInput {
   reserveId?: number;
   playerDatabaseId?: number;
   customName?: string;
-  customSkill?: number;
+  customLevel?: number;
 }
 
 // Set a substitute player for a match
 export const setMatchSubstitute = createServerFn({ method: "POST" })
   .inputValidator((data: SubstituteInput) => data)
   .handler(async ({ data }) => {
-    const { matchId, side, type, reserveId, playerDatabaseId, customName, customSkill } = data;
+    const { matchId, side, type, reserveId, playerDatabaseId, customName, customLevel } = data;
 
     // Build update data based on substitute type
     type UpdateData = {
       substituteAId?: number | null;
       substituteBId?: number | null;
       customSubstituteAName?: string | null;
-      customSubstituteASkill?: number | null;
+      customSubstituteALevel?: number | null;
       customSubstituteBName?: string | null;
-      customSubstituteBSkill?: number | null;
+      customSubstituteBLevel?: number | null;
       updatedAt: Date;
     };
 
@@ -234,11 +234,11 @@ export const setMatchSubstitute = createServerFn({ method: "POST" })
       if (side === "A") {
         updateData.substituteAId = null;
         updateData.customSubstituteAName = null;
-        updateData.customSubstituteASkill = null;
+        updateData.customSubstituteALevel = null;
       } else {
         updateData.substituteBId = null;
         updateData.customSubstituteBName = null;
-        updateData.customSubstituteBSkill = null;
+        updateData.customSubstituteBLevel = null;
       }
     } else if (type === "reserve") {
       // Use existing reserve
@@ -256,11 +256,11 @@ export const setMatchSubstitute = createServerFn({ method: "POST" })
       if (side === "A") {
         updateData.substituteAId = reserveId;
         updateData.customSubstituteAName = null;
-        updateData.customSubstituteASkill = null;
+        updateData.customSubstituteALevel = null;
       } else {
         updateData.substituteBId = reserveId;
         updateData.customSubstituteBName = null;
-        updateData.customSubstituteBSkill = null;
+        updateData.customSubstituteBLevel = null;
       }
     } else if (type === "playerDatabase") {
       // Use player from database - store as custom substitute
@@ -279,11 +279,11 @@ export const setMatchSubstitute = createServerFn({ method: "POST" })
       if (side === "A") {
         updateData.substituteAId = null;
         updateData.customSubstituteAName = player.name;
-        updateData.customSubstituteASkill = player.skill;
+        updateData.customSubstituteALevel = player.level;
       } else {
         updateData.substituteBId = null;
         updateData.customSubstituteBName = player.name;
-        updateData.customSubstituteBSkill = player.skill;
+        updateData.customSubstituteBLevel = player.level;
       }
     } else if (type === "custom") {
       // Custom non-member substitute
@@ -294,11 +294,11 @@ export const setMatchSubstitute = createServerFn({ method: "POST" })
       if (side === "A") {
         updateData.substituteAId = null;
         updateData.customSubstituteAName = customName.trim();
-        updateData.customSubstituteASkill = customSkill ?? null;
+        updateData.customSubstituteALevel = customLevel ?? null;
       } else {
         updateData.substituteBId = null;
         updateData.customSubstituteBName = customName.trim();
-        updateData.customSubstituteBSkill = customSkill ?? null;
+        updateData.customSubstituteBLevel = customLevel ?? null;
       }
     }
 
@@ -341,7 +341,7 @@ export const setMatchHandicap = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-// Get suggested handicap for a match based on skill difference
+// Get suggested handicap for a match based on level difference
 export const getSuggestedHandicap = createServerFn({ method: "GET" })
   .inputValidator((data: { matchId: number }) => data)
   .handler(async ({ data }) => {
@@ -362,21 +362,21 @@ export const getSuggestedHandicap = createServerFn({ method: "GET" })
       throw new Error("Match not found");
     }
 
-    // Use substitute skill if present (reserve first, then custom), otherwise player skill
-    const skillA =
-      match.substituteA?.skill ??
-      match.customSubstituteASkill ??
-      match.playerA.skill;
-    const skillB =
-      match.substituteB?.skill ??
-      match.customSubstituteBSkill ??
-      match.playerB.skill;
+    // Use substitute level if present (reserve first, then custom), otherwise player level
+    const levelA =
+      match.substituteA?.level ??
+      match.customSubstituteALevel ??
+      match.playerA.level;
+    const levelB =
+      match.substituteB?.level ??
+      match.customSubstituteBLevel ??
+      match.playerB.level;
 
-    const suggestedHandicap = calculateSuggestedHandicap(skillA, skillB);
+    const suggestedHandicap = calculateSuggestedHandicap(levelA, levelB);
 
     return {
       suggestedHandicap,
-      skillA,
-      skillB,
+      levelA,
+      levelB,
     };
   });

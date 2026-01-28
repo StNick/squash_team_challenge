@@ -69,18 +69,18 @@ export function MatchScoreInput({
     }
   }
 
-  // Determine display names and skills (use substitute if present, including custom)
+  // Determine display names and levels (use substitute if present, including custom)
   const matchWithCustom = match as typeof match & {
     customSubstituteAName?: string | null;
-    customSubstituteASkill?: number | null;
+    customSubstituteALevel?: number | null;
     customSubstituteBName?: string | null;
-    customSubstituteBSkill?: number | null;
+    customSubstituteBLevel?: number | null;
   };
 
   const displayNameA = match.substituteA?.name ?? matchWithCustom.customSubstituteAName ?? match.playerA.name;
   const displayNameB = match.substituteB?.name ?? matchWithCustom.customSubstituteBName ?? match.playerB.name;
-  const displaySkillA = match.substituteA?.skill ?? matchWithCustom.customSubstituteASkill ?? match.playerA.skill;
-  const displaySkillB = match.substituteB?.skill ?? matchWithCustom.customSubstituteBSkill ?? match.playerB.skill;
+  const displayLevelA = match.substituteA?.level ?? matchWithCustom.customSubstituteALevel ?? match.playerA.level;
+  const displayLevelB = match.substituteB?.level ?? matchWithCustom.customSubstituteBLevel ?? match.playerB.level;
   const isSubstituteA = !!match.substituteA || !!matchWithCustom.customSubstituteAName;
   const isSubstituteB = !!match.substituteB || !!matchWithCustom.customSubstituteBName;
 
@@ -127,14 +127,14 @@ export function MatchScoreInput({
   const PlayerDisplay = ({
     name,
     originalName,
-    skill,
+    level,
     isSubstitute,
     color,
     align,
   }: {
     name: string;
     originalName: string;
-    skill: number | null;
+    level: number | null;
     isSubstitute: boolean;
     color: string;
     align: "left" | "right";
@@ -156,7 +156,7 @@ export function MatchScoreInput({
           (for {originalName})
         </div>
       )}
-      {skill !== null && <span className="text-xs text-gray-500">[{skill}]</span>}
+      {level !== null && <span className="text-xs text-gray-500">[{level}]</span>}
     </div>
   );
 
@@ -179,7 +179,7 @@ export function MatchScoreInput({
           <PlayerDisplay
             name={displayNameA}
             originalName={match.playerA.name}
-            skill={displaySkillA}
+            level={displayLevelA}
             isSubstitute={isSubstituteA}
             color={teamAColor}
             align="right"
@@ -230,7 +230,7 @@ export function MatchScoreInput({
           <PlayerDisplay
             name={displayNameB}
             originalName={match.playerB.name}
-            skill={displaySkillB}
+            level={displayLevelB}
             isSubstitute={isSubstituteB}
             color={teamBColor}
             align="left"
@@ -286,7 +286,7 @@ export function MatchScoreInput({
           <PlayerDisplay
             name={displayNameA}
             originalName={match.playerA.name}
-            skill={displaySkillA}
+            level={displayLevelA}
             isSubstitute={isSubstituteA}
             color={teamAColor}
             align="left"
@@ -294,7 +294,7 @@ export function MatchScoreInput({
           <PlayerDisplay
             name={displayNameB}
             originalName={match.playerB.name}
-            skill={displaySkillB}
+            level={displayLevelB}
             isSubstitute={isSubstituteB}
             color={teamBColor}
             align="right"

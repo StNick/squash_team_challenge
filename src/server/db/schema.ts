@@ -43,7 +43,8 @@ export const players = pgTable("players", {
     .notNull()
     .references(() => teams.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
-  skill: integer("skill").notNull().default(500000), // 1-1,000,000 skill rating
+  playerCode: varchar("player_code", { length: 50 }), // MySquash unique identifier
+  level: integer("level").notNull().default(500000), // 1-1,000,000 level rating
   position: integer("position").notNull(), // 1-5 position within team
   isCaptain: boolean("is_captain").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -87,9 +88,9 @@ export const matches = pgTable("matches", {
     .references(() => reserves.id, { onDelete: "set null" }),
   // Custom substitute fields for non-member/player database substitutes
   customSubstituteAName: varchar("custom_substitute_a_name", { length: 255 }),
-  customSubstituteASkill: integer("custom_substitute_a_skill"),
+  customSubstituteALevel: integer("custom_substitute_a_level"),
   customSubstituteBName: varchar("custom_substitute_b_name", { length: 255 }),
-  customSubstituteBSkill: integer("custom_substitute_b_skill"),
+  customSubstituteBLevel: integer("custom_substitute_b_level"),
   scoreA: integer("score_a"), // nullable until score entered
   scoreB: integer("score_b"),
   handicap: integer("handicap").default(0), // Percentage: Positive = A's score reduced, Negative = B's score reduced
@@ -120,7 +121,7 @@ export const playerDatabase = pgTable("player_database", {
   playerCode: varchar("player_code", { length: 50 }), // MySquash unique identifier
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
-  skill: integer("skill").notNull().default(500000),
+  level: integer("level").notNull().default(500000),
   notes: text("notes"),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -139,7 +140,8 @@ export const reserves = pgTable("reserves", {
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
   notes: text("notes"),
-  skill: integer("skill").notNull().default(500000),
+  level: integer("level").notNull().default(500000),
+  suggestedPosition: varchar("suggested_position", { length: 10 }), // e.g. "1", "1-2", "2-3"
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -151,7 +153,7 @@ export const firstOnCourt = pgTable("first_on_court", {
     .notNull()
     .references(() => tournaments.id, { onDelete: "cascade" }),
   week: integer("week").notNull(),
-  positionGroup: integer("position_group").notNull(), // 1-4 (Level 1-4)
+  positionGroup: integer("position_group").notNull(), // 1-4 (Position 1-4)
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

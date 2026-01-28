@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "../db";
-import { reserves, tournaments, playerDatabase } from "../db/schema";
+import { reserves, tournaments, playerDatabase, players } from "../db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { calculatePositionLevelRanges, calculateSuggestedLevel } from "../lib/generation";
 
 // Get all reserves for the active tournament
 export const getReserves = createServerFn({ method: "GET" }).handler(
@@ -54,19 +55,20 @@ export const createReserve = createServerFn({ method: "POST" })
       phone?: string;
       email?: string;
       notes?: string;
-      skill?: number;
+      level?: number;
+      suggestedPosition?: string;
     }) => data
   )
   .handler(async ({ data }) => {
-    const { name, phone, email, notes, skill } = data;
+    const { name, phone, email, notes, level, suggestedPosition } = data;
 
     if (!name.trim()) {
       throw new Error("Name is required");
     }
 
-    // Validate skill if provided
-    if (skill !== undefined && (skill < 1 || skill > 1000000)) {
-      throw new Error("Skill must be between 1 and 1,000,000");
+    // Validate level if provided
+    if (level !== undefined && (level < 1 || level > 1000000)) {
+      throw new Error("Level must be between 1 and 1,000,000");
     }
 
     const tournament = await db.query.tournaments.findFirst({
@@ -85,7 +87,8 @@ export const createReserve = createServerFn({ method: "POST" })
         phone: phone?.trim() || null,
         email: email?.trim() || null,
         notes: notes?.trim() || null,
-        skill: skill ?? 500000,
+        level: level ?? 500000,
+        suggestedPosition: suggestedPosition?.trim() || null,
         isActive: true,
       })
       .returning();
@@ -102,19 +105,21 @@ export const updateReserve = createServerFn({ method: "POST" })
       phone?: string | null;
       email?: string | null;
       notes?: string | null;
-      skill?: number;
+      level?: number;
+      suggestedPosition?: string | null;
       isActive?: boolean;
     }) => data
   )
   .handler(async ({ data }) => {
-    const { reserveId, name, phone, email, notes, skill, isActive } = data;
+    const { reserveId, name, phone, email, notes, level, suggestedPosition, isActive } = data;
 
     const updateData: Partial<{
       name: string;
       phone: string | null;
       email: string | null;
       notes: string | null;
-      skill: number;
+      level: number;
+      suggestedPosition: string | null;
       isActive: boolean;
     }> = {};
 
@@ -127,12 +132,13 @@ export const updateReserve = createServerFn({ method: "POST" })
     if (phone !== undefined) updateData.phone = phone?.trim() || null;
     if (email !== undefined) updateData.email = email?.trim() || null;
     if (notes !== undefined) updateData.notes = notes?.trim() || null;
-    if (skill !== undefined) {
-      if (skill < 1 || skill > 1000000) {
-        throw new Error("Skill must be between 1 and 1,000,000");
+    if (level !== undefined) {
+      if (level < 1 || level > 1000000) {
+        throw new Error("Level must be between 1 and 1,000,000");
       }
-      updateData.skill = skill;
+      updateData.level = level;
     }
+    if (suggestedPosition !== undefined) updateData.suggestedPosition = suggestedPosition?.trim() || null;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     await db
@@ -203,9 +209,22 @@ export const addReservesFromDatabase = createServerFn({ method: "POST" })
       throw new Error("No valid players found");
     }
 
+    // Calculate position ranges from tournament players for suggested position
+    const allTournamentPlayers = await db.query.players.findMany({
+      where: eq(players.tournamentId, tournament.id),
+    });
+    const levelRanges = calculatePositionLevelRanges(allTournamentPlayers);
+
     // Insert each player as a reserve
     const insertedReserves = [];
     for (const player of playersToAdd) {
+      // Calculate suggested position based on level
+      let suggestedPosition: string | null = null;
+      if (player.level && levelRanges.length > 0) {
+        const position = calculateSuggestedLevel(player.level, levelRanges);
+        suggestedPosition = String(position);
+      }
+
       const [reserve] = await db
         .insert(reserves)
         .values({
@@ -214,8 +233,9 @@ export const addReservesFromDatabase = createServerFn({ method: "POST" })
           name: player.name,
           phone: player.phone,
           email: player.email,
-          notes: player.notes,
-          skill: player.skill,
+          notes: player.notes ?? null,
+          level: player.level,
+          suggestedPosition,
           isActive: true,
         })
         .returning();
@@ -224,3 +244,92 @@ export const addReservesFromDatabase = createServerFn({ method: "POST" })
 
     return { success: true, count: insertedReserves.length };
   });
+
+// Update reserve levels from player database
+// Updates reserves by playerDatabaseId link, or by name match if no link exists
+// Also sets suggestedPosition for reserves that don't have one
+export const updateReserveLevelsFromDatabase = createServerFn({ method: "POST" }).handler(
+  async () => {
+    const tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.isActive, true),
+    });
+
+    if (!tournament) {
+      throw new Error("No active tournament");
+    }
+
+    // Get all reserves for this tournament
+    const allReserves = await db.query.reserves.findMany({
+      where: eq(reserves.tournamentId, tournament.id),
+    });
+
+    if (allReserves.length === 0) {
+      return { success: true, updated: 0 };
+    }
+
+    // Get all player database entries
+    const allPlayerDbEntries = await db.query.playerDatabase.findMany();
+
+    // Create maps for lookup
+    const levelByPlayerId = new Map(allPlayerDbEntries.map(p => [p.id, p.level]));
+    const levelByNameLower = new Map(allPlayerDbEntries.map(p => [p.name.toLowerCase().trim(), p.level]));
+    const playerIdByNameLower = new Map(allPlayerDbEntries.map(p => [p.name.toLowerCase().trim(), p.id]));
+
+    // Calculate position ranges from tournament players for suggested position
+    const allTournamentPlayers = await db.query.players.findMany({
+      where: eq(players.tournamentId, tournament.id),
+    });
+    const levelRanges = calculatePositionLevelRanges(allTournamentPlayers);
+
+    // Update each reserve with the level from player database
+    let updated = 0;
+    for (const reserve of allReserves) {
+      let newLevel: number | undefined;
+      let newPlayerDbId: number | null = reserve.playerDatabaseId;
+
+      if (reserve.playerDatabaseId !== null) {
+        // Use linked player database entry
+        newLevel = levelByPlayerId.get(reserve.playerDatabaseId);
+      } else {
+        // Try to match by name (case-insensitive)
+        const nameLower = reserve.name.toLowerCase().trim();
+        newLevel = levelByNameLower.get(nameLower);
+        // Also link the reserve to the player database for future updates
+        const matchedPlayerId = playerIdByNameLower.get(nameLower);
+        if (matchedPlayerId !== undefined) {
+          newPlayerDbId = matchedPlayerId;
+        }
+      }
+
+      // Determine effective level (new or existing)
+      const effectiveLevel = newLevel ?? reserve.level;
+
+      // Calculate suggested position if reserve doesn't have one
+      let newSuggestedPosition: string | null = reserve.suggestedPosition;
+      if (!reserve.suggestedPosition && effectiveLevel && levelRanges.length > 0) {
+        const position = calculateSuggestedLevel(effectiveLevel, levelRanges);
+        newSuggestedPosition = String(position);
+      }
+
+      // Update if level changed, link changed, or position needs to be set
+      const levelChanged = newLevel !== undefined && newLevel !== reserve.level;
+      const linkChanged = newPlayerDbId !== reserve.playerDatabaseId;
+      const positionAdded = newSuggestedPosition !== reserve.suggestedPosition;
+
+      if (levelChanged || linkChanged || positionAdded) {
+        const updateValues: { level?: number; playerDatabaseId?: number | null; suggestedPosition?: string | null } = {};
+        if (levelChanged) updateValues.level = newLevel;
+        if (linkChanged) updateValues.playerDatabaseId = newPlayerDbId;
+        if (positionAdded) updateValues.suggestedPosition = newSuggestedPosition;
+
+        await db
+          .update(reserves)
+          .set(updateValues)
+          .where(eq(reserves.id, reserve.id));
+        updated++;
+      }
+    }
+
+    return { success: true, updated };
+  }
+);
