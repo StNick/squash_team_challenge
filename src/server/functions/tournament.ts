@@ -63,6 +63,8 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(
           with: {
             playerA: true,
             playerB: true,
+            substituteA: true,
+            substituteB: true,
           },
           orderBy: (matches, { asc }) => [asc(matches.position)],
         },

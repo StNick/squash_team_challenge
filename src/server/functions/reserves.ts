@@ -54,13 +54,19 @@ export const createReserve = createServerFn({ method: "POST" })
       phone?: string;
       email?: string;
       notes?: string;
+      skill?: number;
     }) => data
   )
   .handler(async ({ data }) => {
-    const { name, phone, email, notes } = data;
+    const { name, phone, email, notes, skill } = data;
 
     if (!name.trim()) {
       throw new Error("Name is required");
+    }
+
+    // Validate skill if provided
+    if (skill !== undefined && (skill < 1 || skill > 1000000)) {
+      throw new Error("Skill must be between 1 and 1,000,000");
     }
 
     const tournament = await db.query.tournaments.findFirst({
@@ -79,6 +85,7 @@ export const createReserve = createServerFn({ method: "POST" })
         phone: phone?.trim() || null,
         email: email?.trim() || null,
         notes: notes?.trim() || null,
+        skill: skill ?? 500000,
         isActive: true,
       })
       .returning();
@@ -95,17 +102,19 @@ export const updateReserve = createServerFn({ method: "POST" })
       phone?: string | null;
       email?: string | null;
       notes?: string | null;
+      skill?: number;
       isActive?: boolean;
     }) => data
   )
   .handler(async ({ data }) => {
-    const { reserveId, name, phone, email, notes, isActive } = data;
+    const { reserveId, name, phone, email, notes, skill, isActive } = data;
 
     const updateData: Partial<{
       name: string;
       phone: string | null;
       email: string | null;
       notes: string | null;
+      skill: number;
       isActive: boolean;
     }> = {};
 
@@ -118,6 +127,12 @@ export const updateReserve = createServerFn({ method: "POST" })
     if (phone !== undefined) updateData.phone = phone?.trim() || null;
     if (email !== undefined) updateData.email = email?.trim() || null;
     if (notes !== undefined) updateData.notes = notes?.trim() || null;
+    if (skill !== undefined) {
+      if (skill < 1 || skill > 1000000) {
+        throw new Error("Skill must be between 1 and 1,000,000");
+      }
+      updateData.skill = skill;
+    }
     if (isActive !== undefined) updateData.isActive = isActive;
 
     await db
@@ -200,6 +215,7 @@ export const addReservesFromDatabase = createServerFn({ method: "POST" })
           phone: player.phone,
           email: player.email,
           notes: player.notes,
+          skill: player.skill,
           isActive: true,
         })
         .returning();

@@ -8,7 +8,9 @@ A tournament management application for squash team competitions. Features autom
 - **Admin Panel**: Manage tournaments, players, and scores
 - **Automated Scheduling**: Round-robin matchups and duty rotation
 - **Player Database**: Reusable player directory across tournaments
-- **Reserve System**: Track available substitute players
+- **Reserve System**: Track available substitute players with skill ratings
+- **Handicap System**: Skill-based scoring adjustments with weighted results
+- **Substitute Management**: Assign reserves or custom substitutes to matches
 
 ## Prerequisites
 
@@ -100,6 +102,8 @@ To run the entire application in Docker:
    - PostgreSQL database on port 5432
    - Application server on port 3000
 
+   **Note:** The container automatically runs database migrations on startup before the app starts. If migrations fail, the container will exit with an error.
+
 3. **View logs**
    ```bash
    docker compose logs -f app
@@ -109,6 +113,36 @@ To run the entire application in Docker:
    ```bash
    docker compose down
    ```
+
+### Publishing to Docker Hub
+
+To build and push a new production image:
+
+```bash
+docker buildx build --platform linux/amd64 -t stnickza/squash-team-challenge:latest --push .
+```
+
+This builds for `linux/amd64` (required for most cloud servers) and pushes to [Docker Hub](https://hub.docker.com/r/stnickza/squash-team-challenge).
+
+**Source code**: https://github.com/StNick/squash_team_challenge
+
+### Cloning Production to Development
+
+To create a dev database from prod (including migration history):
+
+```bash
+# Dump prod (includes all schemas)
+pg_dump -Fc "postgresql://user:pass@host:5432/prod_db" > prod_backup.dump
+
+# Create fresh dev database
+psql "postgresql://user:pass@host:5432/postgres" -c "DROP DATABASE IF EXISTS dev_db"
+psql "postgresql://user:pass@host:5432/postgres" -c "CREATE DATABASE dev_db"
+
+# Restore to dev
+pg_restore -d "postgresql://user:pass@host:5432/dev_db" prod_backup.dump
+```
+
+**Important:** Use `-Fc` format to include all schemas (including `drizzle` which tracks migrations).
 
 ### Docker Configuration Options
 
@@ -129,8 +163,9 @@ The `docker-compose.yml` supports these environment variables:
 | `pnpm build` | Build for production |
 | `pnpm start` | Run production build |
 | `pnpm db:generate` | Generate Drizzle migrations |
-| `pnpm db:migrate` | Run pending migrations |
-| `pnpm db:push` | Push schema to database |
+| `pnpm db:migrate` | Run pending migrations (drizzle-kit) |
+| `pnpm db:migrate:run` | Run migrations (programmatic, same as Docker) |
+| `pnpm db:push` | Push schema to database (dev only) |
 | `pnpm db:studio` | Open Drizzle Studio GUI |
 | `pnpm db:seed` | Create admin user |
 | `pnpm db:seed-tournament` | Load sample tournament data |

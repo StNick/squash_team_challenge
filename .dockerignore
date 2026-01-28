@@ -30,8 +30,5 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 
-# Drizzle meta (regenerated)
-drizzle/meta/
-
 # Logs
 *.log

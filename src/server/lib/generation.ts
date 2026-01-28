@@ -536,3 +536,31 @@ export function extractLevelFromNotes(notes: string | null): string | null {
   const match = notes.match(/level[:\s]*(\d(?:\s*(?:or|\/|-)\s*\d)?)/i);
   return match ? match[1] : null;
 }
+
+/**
+ * Calculate suggested handicap percentage based on skill difference between two players.
+ * Returns positive if player A's score should be reduced (A is stronger).
+ * Returns negative if player B's score should be reduced (B is stronger).
+ *
+ * Formula: Handicap % = (Skill Difference / Higher Skill) × 50
+ * Rounded to nearest 5% increment.
+ *
+ * Example: 1500 vs 780 skill
+ * - Difference = 720
+ * - Handicap % = (720 / 1500) × 50 = 24%
+ * - A's score would be reduced by 24% (multiplied by 0.76)
+ */
+export function calculateSuggestedHandicap(skillA: number, skillB: number): number {
+  const higherSkill = Math.max(skillA, skillB);
+  const lowerSkill = Math.min(skillA, skillB);
+  const difference = higherSkill - lowerSkill;
+
+  // Calculate raw percentage
+  const rawPercent = (difference / higherSkill) * 50;
+
+  // Round to nearest 5
+  const roundedPercent = Math.round(rawPercent / 5) * 5;
+
+  // Return positive if A is stronger, negative if B is stronger
+  return skillA >= skillB ? roundedPercent : -roundedPercent;
+}

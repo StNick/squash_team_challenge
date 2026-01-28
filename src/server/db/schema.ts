@@ -81,8 +81,18 @@ export const matches = pgTable("matches", {
   playerBId: integer("player_b_id")
     .notNull()
     .references(() => players.id, { onDelete: "cascade" }),
+  substituteAId: integer("substitute_a_id")
+    .references(() => reserves.id, { onDelete: "set null" }),
+  substituteBId: integer("substitute_b_id")
+    .references(() => reserves.id, { onDelete: "set null" }),
+  // Custom substitute fields for non-member/player database substitutes
+  customSubstituteAName: varchar("custom_substitute_a_name", { length: 255 }),
+  customSubstituteASkill: integer("custom_substitute_a_skill"),
+  customSubstituteBName: varchar("custom_substitute_b_name", { length: 255 }),
+  customSubstituteBSkill: integer("custom_substitute_b_skill"),
   scoreA: integer("score_a"), // nullable until score entered
   scoreB: integer("score_b"),
+  handicap: integer("handicap").default(0), // Percentage: Positive = A's score reduced, Negative = B's score reduced
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -128,6 +138,7 @@ export const reserves = pgTable("reserves", {
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
   notes: text("notes"),
+  skill: integer("skill").notNull().default(500000),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -222,6 +233,16 @@ export const matchesRelations = relations(matches, ({ one }) => ({
     references: [players.id],
     relationName: "playerB",
   }),
+  substituteA: one(reserves, {
+    fields: [matches.substituteAId],
+    references: [reserves.id],
+    relationName: "substituteA",
+  }),
+  substituteB: one(reserves, {
+    fields: [matches.substituteBId],
+    references: [reserves.id],
+    relationName: "substituteB",
+  }),
 }));
 
 export const weeklyDutiesRelations = relations(weeklyDuties, ({ one }) => ({
@@ -245,7 +266,7 @@ export const playerDatabaseRelations = relations(playerDatabase, ({ many }) => (
   reserves: many(reserves),
 }));
 
-export const reservesRelations = relations(reserves, ({ one }) => ({
+export const reservesRelations = relations(reserves, ({ one, many }) => ({
   tournament: one(tournaments, {
     fields: [reserves.tournamentId],
     references: [tournaments.id],
@@ -254,6 +275,8 @@ export const reservesRelations = relations(reserves, ({ one }) => ({
     fields: [reserves.playerDatabaseId],
     references: [playerDatabase.id],
   }),
+  matchesAsSubstituteA: many(matches, { relationName: "substituteA" }),
+  matchesAsSubstituteB: many(matches, { relationName: "substituteB" }),
 }));
 
 export const firstOnCourtRelations = relations(firstOnCourt, ({ one }) => ({

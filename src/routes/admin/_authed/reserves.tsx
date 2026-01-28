@@ -40,11 +40,12 @@ function ReservesPage() {
     phone: "",
     email: "",
     notes: "",
+    skill: 500000,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
-    setFormData({ name: "", phone: "", email: "", notes: "" });
+    setFormData({ name: "", phone: "", email: "", notes: "", skill: 500000 });
     setShowAddModal(false);
     setEditingReserve(null);
     setSelectedPlayerIds([]);
@@ -83,7 +84,11 @@ function ReservesPage() {
       await updateReserve({
         data: {
           reserveId: editingReserve.id,
-          ...formData,
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          notes: formData.notes,
+          skill: formData.skill,
         },
       });
       resetForm();
@@ -122,6 +127,7 @@ function ReservesPage() {
       phone: reserve.phone ?? "",
       email: reserve.email ?? "",
       notes: reserve.notes ?? "",
+      skill: reserve.skill ?? 500000,
     });
   };
 
@@ -173,7 +179,7 @@ function ReservesPage() {
               <thead>
                 <tr className="border-b border-gray-200 text-sm text-gray-500">
                   <th className="py-3 px-4 text-left">Name</th>
-                  <th className="py-3 px-4 text-center">Level</th>
+                  <th className="py-3 px-4 text-center">Skill</th>
                   <th className="py-3 px-4 text-left hidden sm:table-cell">Phone</th>
                   <th className="py-3 px-4 text-left hidden md:table-cell">Email</th>
                   <th className="py-3 px-4 text-center">Status</th>
@@ -182,9 +188,6 @@ function ReservesPage() {
               </thead>
               <tbody>
                 {reserves.map((reserve) => {
-                  // Extract level from notes
-                  const levelMatch = reserve.notes?.match(/level[:\s]*(\d(?:\s*(?:or|\/|-)\s*\d)?)/i);
-                  const levelDisplay = levelMatch ? levelMatch[1] : null;
                   return (
                     <tr key={reserve.id} className="border-b border-gray-100">
                       <td className="py-3 px-4">
@@ -196,13 +199,9 @@ function ReservesPage() {
                         )}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        {levelDisplay ? (
-                          <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                            {levelDisplay}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
+                        <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                          {reserve.skill?.toLocaleString() ?? "500,000"}
+                        </span>
                       </td>
                       <td className="py-3 px-4 hidden sm:table-cell">
                         {reserve.phone || "-"}
@@ -377,6 +376,26 @@ function ReservesPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={2}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Skill Rating (1-1,000,000)
+            </label>
+            <Input
+              type="number"
+              min={1}
+              max={1000000}
+              value={formData.skill}
+              onChange={(e) =>
+                setFormData({ ...formData, skill: parseInt(e.target.value) || 500000 })
+              }
+              placeholder="500000"
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Higher = stronger player. Used for handicap calculations.
+            </p>
           </div>
 
           <div className="flex gap-3 pt-2">

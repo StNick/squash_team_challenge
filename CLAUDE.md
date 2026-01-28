@@ -55,12 +55,17 @@ src/
 - `teams` - Teams with color and total score
 - `players` - Players with skill rating (1-1M) and position (1-5)
 - `weeklyMatchups` - Team vs team pairings per week
-- `matches` - Individual player matches with scores
+- `matches` - Individual player matches with scores, substitutes, and handicaps
 - `weeklyDuties` - Dinner/cleanup team assignments
 - `playerDatabase` - Global player directory (reusable across tournaments)
-- `reserves` - Reserve players for active tournament
+- `reserves` - Reserve players with skill ratings for active tournament
 - `firstOnCourt` - Which position group plays first each week
 - `adminSettings` - Password hash for admin auth
+
+**Key Match Columns:**
+- `substituteAId` / `substituteBId` - Links to reserve players
+- `customSubstituteAName/Skill` / `customSubstituteBName/Skill` - For non-member substitutes
+- `handicap` - Percentage adjustment (positive = A reduced, negative = B reduced)
 
 ## Key Features
 
@@ -69,13 +74,19 @@ src/
 - Team standings (overall and weekly)
 - Duty schedule display
 - Reserve player contact list
+- Handicap-adjusted "weighted results" with tooltip explanations
 
 ### Admin Area (`/admin/*`)
 - **Tournament Creation**: Configure teams, import players via CSV, auto-generate schedules
 - **Player Management**: Swap players between teams, set captains, adjust positions
-- **Score Management**: Edit/correct match scores
-- **Reserve Management**: Add/edit reserve players, link to player database
+- **Score Management**: Edit/correct match scores, assign substitutes, set handicaps
+- **Reserve Management**: Add/edit reserve players, link to player database, set skill ratings
 - **Settings**: Change admin password
+
+### Handicap System
+- Recommended handicap = half the skill advantage between players
+- Applied to the stronger player's score (e.g., 24% handicap reduces their score by 24%)
+- Admin can auto-calculate or manually set handicaps per match
 
 ## Server Functions
 
@@ -90,6 +101,9 @@ All server functions are in `src/server/functions/`:
 | `updateMatchScore()` | Admin score correction |
 | `swapPlayers()` | Exchange players between teams |
 | `setCaptain()` | Designate team captain |
+| `setMatchSubstitute()` | Assign reserve/custom substitute to a match |
+| `setMatchHandicap()` | Set handicap percentage for a match |
+| `getSuggestedHandicap()` | Calculate recommended handicap from skill difference |
 
 ## Generation Algorithms
 
@@ -113,11 +127,36 @@ Located in `src/server/lib/generation.ts`:
 pnpm dev              # Start dev server (port 3000)
 pnpm build            # Production build
 pnpm db:generate      # Generate migrations
-pnpm db:migrate       # Run migrations
-pnpm db:push          # Push schema to database
+pnpm db:migrate       # Run migrations (drizzle-kit)
+pnpm db:migrate:run   # Run migrations (programmatic, same as Docker)
+pnpm db:push          # Push schema to database (dev only)
 pnpm db:studio        # Open Drizzle Studio
 pnpm db:seed          # Initialize admin user
 pnpm db:seed-tournament  # Load sample data
+```
+
+## Docker Deployment
+
+The Docker image automatically runs migrations on startup via `docker-entrypoint.sh`.
+
+```bash
+# Build and push
+docker buildx build --platform linux/amd64 -t stnickza/squash-team-challenge:latest --push .
+```
+
+**Startup sequence:**
+1. `docker-entrypoint.sh` runs `scripts/migrate.mjs`
+2. Migrations check `drizzle.__drizzle_migrations` table
+3. Pending migrations from `drizzle/` are applied
+4. App starts
+
+**Cloning prod to dev:**
+```bash
+# Dump prod (includes drizzle schema with migration history)
+pg_dump -Fc "prod_connection_string" > prod_backup.dump
+
+# Restore to dev
+pg_restore -d "dev_connection_string" prod_backup.dump
 ```
 
 ## Environment Variables
