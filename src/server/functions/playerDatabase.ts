@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "../db";
 import { playerDatabase } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 
 // Get all players from database
 export const getPlayerDatabase = createServerFn({ method: "GET" }).handler(
@@ -55,7 +55,7 @@ export const createPlayerDatabaseEntry = createServerFn({ method: "POST" })
         name: name.trim(),
         email: email?.trim() || null,
         phone: phone?.trim() || null,
-        skill: skill ?? 500000,
+        skill: skill ?? 0,
         notes: notes?.trim() || null,
         isActive: true,
       })
@@ -192,3 +192,165 @@ export const getPlayerDatabaseByIds = createServerFn({ method: "POST" })
 
     return { players };
   });
+
+// Maximum players allowed in database
+const MAX_PLAYERS = 500;
+
+// Import players from MySquash CSV
+export const importPlayersFromCsv = createServerFn({ method: "POST" })
+  .inputValidator((data: { csvContent: string }) => data)
+  .handler(async ({ data }) => {
+    const { csvContent } = data;
+
+    // Parse CSV
+    const lines = csvContent.split("\n").filter((line) => line.trim());
+    if (lines.length < 2) {
+      throw new Error("CSV file appears to be empty or invalid");
+    }
+
+    // Parse header to find column indices
+    const header = parseCSVLine(lines[0]);
+    const nameIndex = header.findIndex((h) => h.toLowerCase() === "name");
+    const playerCodeIndex = header.findIndex(
+      (h) => h.toLowerCase() === "player code"
+    );
+    const levelIndex = header.findIndex((h) => h.toLowerCase() === "level");
+
+    if (nameIndex === -1) {
+      throw new Error('CSV must have a "Name" column');
+    }
+    if (playerCodeIndex === -1) {
+      throw new Error('CSV must have a "Player Code" column');
+    }
+    if (levelIndex === -1) {
+      throw new Error('CSV must have a "Level" column');
+    }
+
+    // Get all existing players for matching
+    const existingPlayers = await db.query.playerDatabase.findMany();
+    let currentCount = existingPlayers.length;
+
+    // Create lookup maps
+    const playersByCode = new Map(
+      existingPlayers
+        .filter((p) => p.playerCode)
+        .map((p) => [p.playerCode!.toLowerCase(), p])
+    );
+    const playersByName = new Map(
+      existingPlayers.map((p) => [p.name.toLowerCase(), p])
+    );
+
+    let imported = 0;
+    let updated = 0;
+    let skipped = 0;
+    let limitReached = false;
+
+    // Process data rows
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      if (values.length <= Math.max(nameIndex, playerCodeIndex, levelIndex)) {
+        skipped++;
+        continue;
+      }
+
+      const name = values[nameIndex]?.trim();
+      const playerCode = values[playerCodeIndex]?.trim();
+      const levelStr = values[levelIndex]?.trim();
+
+      if (!name || !playerCode) {
+        skipped++;
+        continue;
+      }
+
+      // Parse level - default to 0 if not provided or invalid
+      const level = parseInt(levelStr) || 0;
+
+      // Try to find existing player: first by code, then by name
+      let existingPlayer =
+        playersByCode.get(playerCode.toLowerCase()) ||
+        playersByName.get(name.toLowerCase());
+
+      if (existingPlayer) {
+        // Update existing player
+        await db
+          .update(playerDatabase)
+          .set({
+            name,
+            playerCode,
+            skill: level,
+            updatedAt: new Date(),
+          })
+          .where(eq(playerDatabase.id, existingPlayer.id));
+        updated++;
+      } else {
+        // Check limit before inserting new player
+        if (currentCount >= MAX_PLAYERS) {
+          limitReached = true;
+          skipped++;
+          continue;
+        }
+
+        // Insert new player
+        await db.insert(playerDatabase).values({
+          name,
+          playerCode,
+          skill: level,
+          isActive: true,
+        });
+        imported++;
+        currentCount++;
+      }
+    }
+
+    return {
+      success: true,
+      imported,
+      updated,
+      skipped,
+      total: imported + updated,
+      limitReached,
+    };
+  });
+
+// Clear all players from database
+export const clearPlayerDatabase = createServerFn({ method: "POST" }).handler(
+  async () => {
+    await db.delete(playerDatabase);
+    return { success: true };
+  }
+);
+
+// Helper function to parse CSV line (handles quoted values)
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  // Remove BOM if present
+  if (line.charCodeAt(0) === 0xfeff) {
+    line = line.slice(1);
+  }
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        // Escaped quote
+        current += '"';
+        i++;
+      } else {
+        // Toggle quote mode
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+}

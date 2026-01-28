@@ -1,13 +1,15 @@
 "use client";
 
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   getPlayerDatabase,
   createPlayerDatabaseEntry,
   updatePlayerDatabaseEntry,
   deletePlayerDatabaseEntry,
   togglePlayerDatabaseActive,
+  importPlayersFromCsv,
+  clearPlayerDatabase,
 } from "~/server/functions/playerDatabase";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
@@ -30,14 +32,26 @@ function PlayerDatabasePage() {
     name: "",
     email: "",
     phone: "",
-    skill: "500000",
+    skill: "0",
     notes: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Import state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    imported: number;
+    updated: number;
+    skipped: number;
+    total: number;
+    limitReached: boolean;
+  } | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
+
   const resetForm = () => {
-    setFormData({ name: "", email: "", phone: "", skill: "500000", notes: "" });
+    setFormData({ name: "", email: "", phone: "", skill: "0", notes: "" });
     setShowAddModal(false);
     setEditingPlayer(null);
     setError(null);
@@ -120,6 +134,58 @@ function PlayerDatabasePage() {
     }
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset file input so the same file can be selected again
+    e.target.value = "";
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      alert("Please select a CSV file");
+      return;
+    }
+
+    setIsImporting(true);
+    setImportResult(null);
+
+    try {
+      const csvContent = await file.text();
+      const result = await importPlayersFromCsv({ data: { csvContent } });
+      setImportResult(result);
+      router.invalidate();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to import CSV");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleClearDatabase = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to delete ALL players from the database?\n\nThis will not affect players already in tournaments, but you will lose all player data in this directory."
+      )
+    ) {
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await clearPlayerDatabase();
+      setImportResult(null);
+      router.invalidate();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to clear database");
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   const openEditModal = (player: typeof players[0]) => {
     setEditingPlayer(player);
     setFormData({
@@ -134,15 +200,82 @@ function PlayerDatabasePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Player Database</h1>
           <p className="text-sm text-gray-500">
             Manage your global player directory. These players can be added to tournaments.
           </p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>Add Player</Button>
+        <div className="flex gap-2">
+          {players.length > 0 && (
+            <Button
+              variant="danger"
+              onClick={handleClearDatabase}
+              disabled={isClearing}
+            >
+              {isClearing ? "Clearing..." : "Clear All"}
+            </Button>
+          )}
+          <Button variant="secondary" onClick={handleImportClick} disabled={isImporting}>
+            {isImporting ? "Importing..." : "Import CSV"}
+          </Button>
+          <Button onClick={() => setShowAddModal(true)}>Add Player</Button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
       </div>
+
+      {/* MySquash Import Info */}
+      <Card>
+        <CardContent className="text-sm text-gray-600">
+          <p className="font-medium text-gray-800 mb-1">Importing from MySquash</p>
+          <p className="mb-2">
+            You can import players from Squash New Zealand's MySquash portal. Export the "Grading List"
+            as a CSV file, then use the Import button above.
+          </p>
+          <p className="text-amber-700 bg-amber-50 p-2 rounded">
+            <strong>Important:</strong> The database has a limit of 500 players. Apply filters in MySquash
+            before exporting (e.g. filter by club or district) to only import players who might participate.
+            Players will be imported until the limit is reached.
+          </p>
+          <p className="mt-2 text-xs text-gray-500">
+            Current: {players.length} / 500 players
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Import Result */}
+      {importResult && (
+        <Card>
+          <CardContent className="text-sm">
+            <p className="font-medium text-green-700 mb-1">Import Complete</p>
+            <ul className="text-gray-600 space-y-1">
+              <li>New players added: <strong>{importResult.imported}</strong></li>
+              <li>Existing players updated: <strong>{importResult.updated}</strong></li>
+              {importResult.skipped > 0 && (
+                <li className="text-amber-600">Rows skipped: <strong>{importResult.skipped}</strong></li>
+              )}
+            </ul>
+            {importResult.limitReached && (
+              <p className="mt-2 text-red-600 bg-red-50 p-2 rounded">
+                <strong>Limit reached:</strong> The 500 player limit was reached. Some players from the CSV were not imported.
+              </p>
+            )}
+            <button
+              onClick={() => setImportResult(null)}
+              className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+            >
+              Dismiss
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
       {players.length === 0 ? (
         <Card>
@@ -158,6 +291,7 @@ function PlayerDatabasePage() {
               <thead>
                 <tr className="border-b border-gray-200 text-sm text-gray-500">
                   <th className="py-3 px-4 text-left">Name</th>
+                  <th className="py-3 px-4 text-left hidden lg:table-cell">Code</th>
                   <th className="py-3 px-4 text-left hidden sm:table-cell">Email</th>
                   <th className="py-3 px-4 text-left hidden md:table-cell">Phone</th>
                   <th className="py-3 px-4 text-right">Skill</th>
@@ -175,6 +309,9 @@ function PlayerDatabasePage() {
                           {player.notes}
                         </div>
                       )}
+                    </td>
+                    <td className="py-3 px-4 hidden lg:table-cell font-mono text-xs text-gray-500">
+                      {player.playerCode || "-"}
                     </td>
                     <td className="py-3 px-4 hidden sm:table-cell">
                       {player.email || "-"}
@@ -286,7 +423,7 @@ function PlayerDatabasePage() {
               onChange={(e) =>
                 setFormData({ ...formData, skill: e.target.value })
               }
-              placeholder="500000"
+              placeholder="0"
               className="w-full"
             />
           </div>

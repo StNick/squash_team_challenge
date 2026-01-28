@@ -117,6 +117,7 @@ export const weeklyDuties = pgTable("weekly_duties", {
 export const playerDatabase = pgTable("player_database", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  playerCode: varchar("player_code", { length: 50 }), // MySquash unique identifier
   email: varchar("email", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   skill: integer("skill").notNull().default(500000),

@@ -1,7 +1,7 @@
 "use client";
 
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getDashboardData } from "~/server/functions/tournament";
 import {
   updateMatchScore,
@@ -57,6 +57,37 @@ function ScoresPage() {
 
   // Track recommended handicaps for each match
   const [recommendedHandicaps, setRecommendedHandicaps] = useState<Record<number, number>>({});
+
+  // Pre-fetch recommended handicaps for all matches in the selected week
+  useEffect(() => {
+    if (!tournament) return;
+
+    const weekData = tournament.weeklyData[selectedWeek];
+    if (!weekData) return;
+
+    const fetchRecommendedHandicaps = async () => {
+      const matchIds = weekData.matchups.flatMap((m) => m.matches.map((match) => match.id));
+
+      const results = await Promise.all(
+        matchIds.map(async (matchId) => {
+          try {
+            const result = await getSuggestedHandicap({ data: { matchId } });
+            return { matchId, handicap: result.suggestedHandicap };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const handicapMap: Record<number, number> = {};
+      for (const r of results) {
+        if (r) handicapMap[r.matchId] = r.handicap;
+      }
+      setRecommendedHandicaps(handicapMap);
+    };
+
+    fetchRecommendedHandicaps();
+  }, [tournament, selectedWeek]);
 
   if (!tournament) {
     return (

@@ -1,0 +1,1 @@
+ALTER TABLE "player_database" ADD COLUMN "player_code" varchar(50);
