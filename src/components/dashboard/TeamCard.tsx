@@ -31,11 +31,11 @@ export function TeamCard({ team, rank }: TeamCardProps) {
               className="flex items-center justify-between text-sm"
             >
               <span className="flex items-center gap-2">
-                <span className="text-gray-400 w-4">{player.position}.</span>
-                <span className={player.isCaptain ? "font-medium" : ""}>
+                <span className="text-gray-400 dark:text-gray-500 w-4">{player.position}.</span>
+                <span className={`${player.isCaptain ? "font-medium" : ""} dark:text-gray-200`}>
                   {player.name}
                 </span>
-                <span className="text-gray-400 text-xs">[{player.level.toLocaleString()}]</span>
+                <span className="text-gray-400 dark:text-gray-500 text-xs">[{player.level.toLocaleString()}]</span>
                 {player.isCaptain && (
                   <span
                     className={`text-xs px-1.5 py-0.5 rounded ${colors.text} ${colors.bg}`}

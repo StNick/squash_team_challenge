@@ -136,6 +136,18 @@ pnpm db:seed          # Initialize admin user
 pnpm db:seed-tournament  # Load sample data
 ```
 
+**IMPORTANT: Database Migrations**
+
+**NEVER manually create migration files in `drizzle/`.** This includes Claude - if `db:generate` requires interactive prompts that Claude cannot answer, ask the user to run it instead.
+
+Always use the drizzle workflow:
+
+1. Edit `src/server/db/schema.ts` with your changes
+2. Run `pnpm db:generate` - this creates the migration AND registers it in `drizzle/meta/_journal.json`
+3. Run `pnpm db:migrate` to apply
+
+Manually created SQL files won't be registered in the journal and will be silently ignored by the migrator. Even if you add them to the journal manually, the snapshot files in `drizzle/meta/` won't be updated, causing drizzle to get confused about the schema state.
+
 ## Docker Deployment
 
 The Docker image automatically runs migrations on startup via `docker-entrypoint.sh`.

@@ -18,6 +18,7 @@ import { Route as AdminAuthedReservesRouteImport } from './routes/admin/_authed/
 import { Route as AdminAuthedPlayersRouteImport } from './routes/admin/_authed/players'
 import { Route as AdminAuthedPlayerDatabaseRouteImport } from './routes/admin/_authed/player-database'
 import { Route as AdminAuthedDashboardRouteImport } from './routes/admin/_authed/dashboard'
+import { Route as AdminAuthedTournamentEditRouteImport } from './routes/admin/_authed/tournament/edit'
 import { Route as AdminAuthedTournamentCreateRouteImport } from './routes/admin/_authed/tournament/create'
 
 const IndexRoute = IndexRouteImport.update({
@@ -66,6 +67,12 @@ const AdminAuthedDashboardRoute = AdminAuthedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminAuthedRoute,
 } as any)
+const AdminAuthedTournamentEditRoute =
+  AdminAuthedTournamentEditRouteImport.update({
+    id: '/tournament/edit',
+    path: '/tournament/edit',
+    getParentRoute: () => AdminAuthedRoute,
+  } as any)
 const AdminAuthedTournamentCreateRoute =
   AdminAuthedTournamentCreateRouteImport.update({
     id: '/tournament/create',
@@ -84,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/admin/scores': typeof AdminAuthedScoresRoute
   '/admin/settings': typeof AdminAuthedSettingsRoute
   '/admin/tournament/create': typeof AdminAuthedTournamentCreateRoute
+  '/admin/tournament/edit': typeof AdminAuthedTournamentEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -95,6 +103,7 @@ export interface FileRoutesByTo {
   '/admin/scores': typeof AdminAuthedScoresRoute
   '/admin/settings': typeof AdminAuthedSettingsRoute
   '/admin/tournament/create': typeof AdminAuthedTournamentCreateRoute
+  '/admin/tournament/edit': typeof AdminAuthedTournamentEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,6 +117,7 @@ export interface FileRoutesById {
   '/admin/_authed/scores': typeof AdminAuthedScoresRoute
   '/admin/_authed/settings': typeof AdminAuthedSettingsRoute
   '/admin/_authed/tournament/create': typeof AdminAuthedTournamentCreateRoute
+  '/admin/_authed/tournament/edit': typeof AdminAuthedTournamentEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/admin/scores'
     | '/admin/settings'
     | '/admin/tournament/create'
+    | '/admin/tournament/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/admin/scores'
     | '/admin/settings'
     | '/admin/tournament/create'
+    | '/admin/tournament/edit'
   id:
     | '__root__'
     | '/'
@@ -145,6 +157,7 @@ export interface FileRouteTypes {
     | '/admin/_authed/scores'
     | '/admin/_authed/settings'
     | '/admin/_authed/tournament/create'
+    | '/admin/_authed/tournament/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAuthedDashboardRouteImport
       parentRoute: typeof AdminAuthedRoute
     }
+    '/admin/_authed/tournament/edit': {
+      id: '/admin/_authed/tournament/edit'
+      path: '/tournament/edit'
+      fullPath: '/admin/tournament/edit'
+      preLoaderRoute: typeof AdminAuthedTournamentEditRouteImport
+      parentRoute: typeof AdminAuthedRoute
+    }
     '/admin/_authed/tournament/create': {
       id: '/admin/_authed/tournament/create'
       path: '/tournament/create'
@@ -236,6 +256,7 @@ interface AdminAuthedRouteChildren {
   AdminAuthedScoresRoute: typeof AdminAuthedScoresRoute
   AdminAuthedSettingsRoute: typeof AdminAuthedSettingsRoute
   AdminAuthedTournamentCreateRoute: typeof AdminAuthedTournamentCreateRoute
+  AdminAuthedTournamentEditRoute: typeof AdminAuthedTournamentEditRoute
 }
 
 const AdminAuthedRouteChildren: AdminAuthedRouteChildren = {
@@ -246,6 +267,7 @@ const AdminAuthedRouteChildren: AdminAuthedRouteChildren = {
   AdminAuthedScoresRoute: AdminAuthedScoresRoute,
   AdminAuthedSettingsRoute: AdminAuthedSettingsRoute,
   AdminAuthedTournamentCreateRoute: AdminAuthedTournamentCreateRoute,
+  AdminAuthedTournamentEditRoute: AdminAuthedTournamentEditRoute,
 }
 
 const AdminAuthedRouteWithChildren = AdminAuthedRoute._addFileChildren(

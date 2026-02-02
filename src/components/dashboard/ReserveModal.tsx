@@ -1,10 +1,11 @@
 import { Modal } from "~/components/ui/Modal";
-import type { Reserve } from "~/server/db/schema";
+import type { Reserve, TournamentStatus } from "~/server/db/schema";
 
 interface ReserveModalProps {
   isOpen: boolean;
   onClose: () => void;
   reserves: Reserve[];
+  tournamentStatus?: TournamentStatus;
 }
 
 /**
@@ -17,41 +18,51 @@ function getSortPosition(suggestedPosition: string | null): number {
   return firstDigit ? parseInt(firstDigit[0], 10) : 999;
 }
 
-export function ReserveModal({ isOpen, onClose, reserves }: ReserveModalProps) {
+export function ReserveModal({ isOpen, onClose, reserves, tournamentStatus = "active" }: ReserveModalProps) {
   // Sort reserves by position
   const sortedReserves = [...reserves].sort((a, b) => {
     return getSortPosition(a.suggestedPosition) - getSortPosition(b.suggestedPosition);
   });
 
+  // Hide contact info for ended tournaments
+  const showContactInfo = tournamentStatus === "active";
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Need a Reserve?">
       {sortedReserves.length === 0 ? (
-        <p className="text-gray-500 text-center py-4">
+        <p className="text-gray-500 dark:text-gray-400 text-center py-4">
           No reserves available at the moment.
         </p>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-gray-600 mb-4">
-            Contact one of our reserve players if you can't make it:
-          </p>
+          {!showContactInfo && (
+            <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 p-2 rounded mb-4">
+              Contact info is hidden for past tournaments.
+            </p>
+          )}
+          {showContactInfo && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Contact one of our reserve players if you can't make it:
+            </p>
+          )}
           <ul className="space-y-3">
             {sortedReserves.map((reserve) => (
               <li
                 key={reserve.id}
-                className="p-3 bg-gray-50 rounded-lg"
+                className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-900">{reserve.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{reserve.name}</span>
                   {reserve.suggestedPosition && (
-                    <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                    <span className="text-xs font-medium px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
                       Position {reserve.suggestedPosition}
                     </span>
                   )}
                 </div>
-                {reserve.phone && (
+                {showContactInfo && reserve.phone && (
                   <a
                     href={`tel:${reserve.phone}`}
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-1"
                   >
                     <svg
                       className="w-4 h-4"
@@ -69,10 +80,10 @@ export function ReserveModal({ isOpen, onClose, reserves }: ReserveModalProps) {
                     {reserve.phone}
                   </a>
                 )}
-                {reserve.email && (
+                {showContactInfo && reserve.email && (
                   <a
                     href={`mailto:${reserve.email}`}
-                    className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-1"
                   >
                     <svg
                       className="w-4 h-4"
@@ -91,7 +102,7 @@ export function ReserveModal({ isOpen, onClose, reserves }: ReserveModalProps) {
                   </a>
                 )}
                 {reserve.notes && (
-                  <p className="text-xs text-gray-500 mt-2">{reserve.notes}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{reserve.notes}</p>
                 )}
               </li>
             ))}

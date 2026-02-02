@@ -2,46 +2,78 @@
 
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { createTournament, updateTournamentStatus } from "~/server/functions/tournament";
+import {
+  getDraftTournamentForEdit,
+  updateDraftTournament,
+  updateTournamentStatus,
+} from "~/server/functions/tournament";
 import { getActivePlayerDatabase } from "~/server/functions/playerDatabase";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/Input";
 import { Card, CardContent, CardHeader } from "~/components/ui/Card";
 
-export const Route = createFileRoute("/admin/_authed/tournament/create")({
-  loader: async () => {
-    return await getActivePlayerDatabase();
+export const Route = createFileRoute("/admin/_authed/tournament/edit")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    id: Number(search.id) || 0,
+  }),
+  loaderDeps: ({ search: { id } }) => ({ id }),
+  loader: async ({ deps: { id } }) => {
+    if (!id) {
+      throw new Error("Tournament ID is required");
+    }
+    const [tournamentData, playerDbData] = await Promise.all([
+      getDraftTournamentForEdit({ data: { tournamentId: id } }),
+      getActivePlayerDatabase(),
+    ]);
+    return {
+      ...tournamentData,
+      databasePlayers: playerDbData.players,
+    };
   },
-  component: CreateTournamentPage,
+  component: EditTournamentPage,
 });
 
-function CreateTournamentPage() {
-  const { players: databasePlayers } = Route.useLoaderData();
+function EditTournamentPage() {
+  const {
+    tournament,
+    selectedPlayerIds: initialSelectedPlayerIds,
+    playersCsv: initialPlayersCsv,
+    selectedReserveIds: initialSelectedReserveIds,
+    reservesCsv: initialReservesCsv,
+    dinnerDutiesOrder: initialDinnerDutiesOrder,
+    cleanupDutiesOrder: initialCleanupDutiesOrder,
+    firstOnCourtOrder: initialFirstOnCourtOrder,
+    matchupSchedule: initialMatchupSchedule,
+    databasePlayers,
+  } = Route.useLoaderData();
+
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [numWeeks, setNumWeeks] = useState(10);
-  const [numTeams, setNumTeams] = useState(4);
-  const [playersCsv, setPlayersCsv] = useState("");
-  const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
-  const [selectedReserveIds, setSelectedReserveIds] = useState<number[]>([]);
-  const [reservesCsv, setReservesCsv] = useState("");
-  // Advanced options for pre-defined tournament configuration
-  const [dinnerDutiesOrder, setDinnerDutiesOrder] = useState("");
-  const [cleanupDutiesOrder, setCleanupDutiesOrder] = useState("");
-  const [firstOnCourtOrder, setFirstOnCourtOrder] = useState("");
-  const [matchupSchedule, setMatchupSchedule] = useState("");
+  const [name, setName] = useState(tournament.name);
+  const [numWeeks, setNumWeeks] = useState(tournament.numWeeks);
+  const [numTeams, setNumTeams] = useState(tournament.numTeams);
+  const [playersCsv, setPlayersCsv] = useState(initialPlayersCsv);
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>(initialSelectedPlayerIds);
+  const [selectedReserveIds, setSelectedReserveIds] = useState<number[]>(initialSelectedReserveIds);
+  const [reservesCsv, setReservesCsv] = useState(initialReservesCsv);
+  // Advanced options (now loaded from stored config)
+  const [dinnerDutiesOrder, setDinnerDutiesOrder] = useState(initialDinnerDutiesOrder);
+  const [cleanupDutiesOrder, setCleanupDutiesOrder] = useState(initialCleanupDutiesOrder);
+  const [firstOnCourtOrder, setFirstOnCourtOrder] = useState(initialFirstOnCourtOrder);
+  const [matchupSchedule, setMatchupSchedule] = useState(initialMatchupSchedule);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdTournamentId, setCreatedTournamentId] = useState<number | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSaveSuccess(false);
     setIsLoading(true);
 
     try {
-      const result = await createTournament({
+      await updateDraftTournament({
         data: {
+          tournamentId: tournament.id,
           name,
           numWeeks,
           numTeams,
@@ -55,23 +87,19 @@ function CreateTournamentPage() {
           matchupSchedule: matchupSchedule.trim() || undefined,
         },
       });
-
-      if (result.success) {
-        setCreatedTournamentId(result.tournamentId);
-      }
+      setSaveSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create tournament");
+      setError(err instanceof Error ? err.message : "Failed to update tournament");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleActivate = async () => {
-    if (!createdTournamentId) return;
     setIsLoading(true);
     try {
       await updateTournamentStatus({
-        data: { tournamentId: createdTournamentId, status: "active" },
+        data: { tournamentId: tournament.id, status: "active" },
       });
       navigate({ to: "/admin/dashboard" });
     } catch (err) {
@@ -80,45 +108,6 @@ function CreateTournamentPage() {
       setIsLoading(false);
     }
   };
-
-  // Show success screen after creation
-  if (createdTournamentId) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <Card>
-          <CardHeader>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              Tournament Created!
-            </h1>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-gray-600 dark:text-gray-400">
-              Your tournament "{name}" has been created as a <strong>draft</strong>.
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500">
-              Draft tournaments are not visible to the public. Teams and schedules will be generated when you activate. You can edit the configuration or activate it now.
-            </p>
-            <div className="flex gap-3 pt-4">
-              <Button onClick={handleActivate} disabled={isLoading}>
-                {isLoading ? "Activating..." : "Activate Now"}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate({ to: "/admin/dashboard" })}
-              >
-                Go to Dashboard
-              </Button>
-            </div>
-            {error && (
-              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-2 rounded">
-                {error}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   // Parse CSV players for preview
   const csvPlayers = playersCsv
@@ -157,18 +146,20 @@ function CreateTournamentPage() {
         ? prev.filter((id) => id !== playerId)
         : [...prev, playerId]
     );
+    setSaveSuccess(false);
   };
 
   const selectAllPlayers = () => {
     setSelectedPlayerIds(databasePlayers.map((p) => p.id));
+    setSaveSuccess(false);
   };
 
   const deselectAllPlayers = () => {
     setSelectedPlayerIds([]);
+    setSaveSuccess(false);
   };
 
   // Reserves selection helpers
-  // Get players not selected as tournament players (available as reserves)
   const availableReservePlayers = databasePlayers.filter(
     (p) => !selectedPlayerIds.includes(p.id)
   );
@@ -179,24 +170,47 @@ function CreateTournamentPage() {
         ? prev.filter((id) => id !== playerId)
         : [...prev, playerId]
     );
+    setSaveSuccess(false);
   };
 
   const selectAllReserves = () => {
     setSelectedReserveIds(availableReservePlayers.map((p) => p.id));
+    setSaveSuccess(false);
   };
 
   const deselectAllReserves = () => {
     setSelectedReserveIds([]);
+    setSaveSuccess(false);
   };
 
-  // Remove selected reserves when they become players
   const actualSelectedReserveIds = selectedReserveIds.filter(
     (id) => !selectedPlayerIds.includes(id)
   );
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Tournament</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Edit Tournament: {tournament.name}
+        </h1>
+        <div className="flex gap-2">
+          <Button onClick={handleActivate} disabled={isLoading}>
+            {isLoading ? "Activating..." : "Activate Tournament"}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => navigate({ to: "/admin/dashboard" })}
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+
+      {saveSuccess && (
+        <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 p-3 rounded-lg">
+          Tournament updated successfully! You can continue editing or activate the tournament.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -215,7 +229,7 @@ function CreateTournamentPage() {
                 id="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); setSaveSuccess(false); }}
                 placeholder="e.g., Spring 2024 Tournament"
                 className="w-full"
               />
@@ -235,7 +249,7 @@ function CreateTournamentPage() {
                   min={1}
                   max={20}
                   value={numWeeks}
-                  onChange={(e) => setNumWeeks(parseInt(e.target.value) || 10)}
+                  onChange={(e) => { setNumWeeks(parseInt(e.target.value) || 10); setSaveSuccess(false); }}
                   className="w-full"
                 />
               </div>
@@ -253,7 +267,7 @@ function CreateTournamentPage() {
                   min={2}
                   max={8}
                   value={numTeams}
-                  onChange={(e) => setNumTeams(parseInt(e.target.value) || 4)}
+                  onChange={(e) => { setNumTeams(parseInt(e.target.value) || 4); setSaveSuccess(false); }}
                   className="w-full"
                 />
               </div>
@@ -329,7 +343,7 @@ function CreateTournamentPage() {
           <CardContent className="space-y-4">
             <textarea
               value={playersCsv}
-              onChange={(e) => setPlayersCsv(e.target.value)}
+              onChange={(e) => { setPlayersCsv(e.target.value); setSaveSuccess(false); }}
               placeholder={`John Smith,800000,Red,C
 Jane Doe,750000,Blue
 Bob Wilson,700000,Red
@@ -412,7 +426,7 @@ Alice Brown,650000,Blue,C`}
           <CardContent>
             <textarea
               value={reservesCsv}
-              onChange={(e) => setReservesCsv(e.target.value)}
+              onChange={(e) => { setReservesCsv(e.target.value); setSaveSuccess(false); }}
               placeholder={`Nolan Shaw,0210 263 1290,750000
 Trevor Moore,021 166 6214,600000
 Spencer Craft,021 174 7700,850000`}
@@ -511,7 +525,7 @@ Spencer Craft,021 174 7700,850000`}
           </Card>
         )}
 
-        {/* Advanced Options - collapsed by default */}
+        {/* Advanced Options */}
         <details className="group">
           <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white py-2 list-none flex items-center gap-2">
             <svg
@@ -539,7 +553,7 @@ Spencer Craft,021 174 7700,850000`}
               </p>
               <textarea
                 value={matchupSchedule}
-                onChange={(e) => setMatchupSchedule(e.target.value)}
+                onChange={(e) => { setMatchupSchedule(e.target.value); setSaveSuccess(false); }}
                 placeholder={`Red vs Blue, Green vs Yellow
 Red vs Green, Blue vs Yellow
 Red vs Yellow, Blue vs Green`}
@@ -556,7 +570,7 @@ Red vs Yellow, Blue vs Green`}
               </p>
               <Input
                 value={dinnerDutiesOrder}
-                onChange={(e) => setDinnerDutiesOrder(e.target.value)}
+                onChange={(e) => { setDinnerDutiesOrder(e.target.value); setSaveSuccess(false); }}
                 placeholder="Red,Blue,Green,Yellow,Red,Blue,Green,Yellow,Red,Blue"
                 className="w-full font-mono text-sm"
               />
@@ -571,7 +585,7 @@ Red vs Yellow, Blue vs Green`}
               </p>
               <Input
                 value={cleanupDutiesOrder}
-                onChange={(e) => setCleanupDutiesOrder(e.target.value)}
+                onChange={(e) => { setCleanupDutiesOrder(e.target.value); setSaveSuccess(false); }}
                 placeholder="Green,Yellow,Red,Blue,Green,Yellow,Red,Blue,Green,Yellow"
                 className="w-full font-mono text-sm"
               />
@@ -582,11 +596,11 @@ Red vs Yellow, Blue vs Green`}
                 First on Court Order
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Which level plays first each week (1-4, comma-separated). Leave blank to randomize.
+                Which position plays first each week (1-4, comma-separated). Leave blank to randomize.
               </p>
               <Input
                 value={firstOnCourtOrder}
-                onChange={(e) => setFirstOnCourtOrder(e.target.value)}
+                onChange={(e) => { setFirstOnCourtOrder(e.target.value); setSaveSuccess(false); }}
                 placeholder="2,4,1,3,2,4,1,3,2,4"
                 className="w-full font-mono text-sm"
               />
@@ -602,7 +616,7 @@ Red vs Yellow, Blue vs Green`}
 
         <div className="flex gap-4">
           <Button type="submit" disabled={!isValid || isLoading}>
-            {isLoading ? "Creating..." : "Create Tournament"}
+            {isLoading ? "Saving..." : "Save Changes"}
           </Button>
           <Button
             type="button"

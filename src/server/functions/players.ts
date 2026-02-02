@@ -6,7 +6,7 @@ import { eq, and } from "drizzle-orm";
 // Get all players for the active tournament
 export const getPlayers = createServerFn({ method: "GET" }).handler(async () => {
   const tournament = await db.query.tournaments.findFirst({
-    where: eq(tournaments.isActive, true),
+    where: eq(tournaments.status, "active"),
   });
 
   if (!tournament) {

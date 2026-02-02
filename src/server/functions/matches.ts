@@ -33,6 +33,9 @@ export const submitMatchScore = createServerFn({ method: "POST" })
       throw new Error("Match not found");
     }
 
+    // Check if this is the first score entry (for audit timestamp)
+    const isFirstScore = match.scoreA === null && match.scoreB === null;
+
     // Update match score
     await db
       .update(matches)
@@ -40,6 +43,7 @@ export const submitMatchScore = createServerFn({ method: "POST" })
         scoreA,
         scoreB,
         updatedAt: new Date(),
+        ...(isFirstScore && { scoredAt: new Date() }),
       })
       .where(eq(matches.id, matchId));
 
@@ -75,6 +79,10 @@ export const updateMatchScore = createServerFn({ method: "POST" })
       throw new Error("Match not found");
     }
 
+    // Check if this is the first score entry (for audit timestamp)
+    const isFirstScore = match.scoreA === null && match.scoreB === null;
+    const isSettingScores = scoreA !== null && scoreB !== null;
+
     // Update match score
     await db
       .update(matches)
@@ -82,6 +90,7 @@ export const updateMatchScore = createServerFn({ method: "POST" })
         scoreA,
         scoreB,
         updatedAt: new Date(),
+        ...(isFirstScore && isSettingScores && { scoredAt: new Date() }),
       })
       .where(eq(matches.id, matchId));
 

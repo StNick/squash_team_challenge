@@ -14,17 +14,17 @@ export function DutySchedule({ duties, currentWeek }: DutyScheduleProps) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200">
-            <th className="py-2 px-3 text-left font-medium text-gray-500">
+          <tr className="border-b border-gray-200 dark:border-gray-700">
+            <th className="py-2 px-3 text-left font-medium text-gray-500 dark:text-gray-400">
               Week
             </th>
-            <th className="py-2 px-3 text-left font-medium text-gray-500">
+            <th className="py-2 px-3 text-left font-medium text-gray-500 dark:text-gray-400">
               Dinner
             </th>
-            <th className="py-2 px-3 text-left font-medium text-gray-500">
+            <th className="py-2 px-3 text-left font-medium text-gray-500 dark:text-gray-400">
               Cleanup
             </th>
-            <th className="py-2 px-3 text-left font-medium text-gray-500">
+            <th className="py-2 px-3 text-left font-medium text-gray-500 dark:text-gray-400">
               First on Court
             </th>
           </tr>
@@ -33,21 +33,21 @@ export function DutySchedule({ duties, currentWeek }: DutyScheduleProps) {
           {duties.map((duty) => (
             <tr
               key={duty.id}
-              className={`border-b border-gray-100 ${
-                duty.week === currentWeek ? "bg-blue-50" : ""
+              className={`border-b border-gray-100 dark:border-gray-700 ${
+                duty.week === currentWeek ? "bg-blue-50 dark:bg-blue-900/20" : ""
               }`}
             >
               <td className="py-2 px-3">
                 <span
                   className={`${
                     duty.week === currentWeek
-                      ? "font-bold text-blue-600"
-                      : "text-gray-600"
+                      ? "font-bold text-blue-600 dark:text-blue-400"
+                      : "text-gray-600 dark:text-gray-300"
                   }`}
                 >
                   Week {duty.week}
                   {duty.week === currentWeek && (
-                    <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                    <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">
                       Current
                     </span>
                   )}
@@ -59,7 +59,7 @@ export function DutySchedule({ duties, currentWeek }: DutyScheduleProps) {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: duty.dinnerTeam.color }}
                   />
-                  <span>{duty.dinnerTeam.name}</span>
+                  <span className="dark:text-gray-200">{duty.dinnerTeam.name}</span>
                 </div>
               </td>
               <td className="py-2 px-3">
@@ -68,16 +68,16 @@ export function DutySchedule({ duties, currentWeek }: DutyScheduleProps) {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: duty.cleanupTeam.color }}
                   />
-                  <span>{duty.cleanupTeam.name}</span>
+                  <span className="dark:text-gray-200">{duty.cleanupTeam.name}</span>
                 </div>
               </td>
               <td className="py-2 px-3">
                 {duty.firstOnCourt ? (
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     Position {duty.firstOnCourt}
                   </span>
                 ) : (
-                  <span className="text-gray-400">-</span>
+                  <span className="text-gray-400 dark:text-gray-500">-</span>
                 )}
               </td>
             </tr>

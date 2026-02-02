@@ -422,28 +422,28 @@ export function calculatePositionLevelRanges(
 }
 
 /**
- * Determine suggested level (1-4) for a level value based on position ranges
- * Uses the midpoint of each position's level range
+ * Determine suggested position (1-4) for a level value based on position ranges
+ * Higher level = lower position number (1 = best player)
  */
 export function calculateSuggestedLevel(
   level: number,
   ranges: PositionLevelRange[]
 ): number {
-  if (ranges.length === 0) return 2; // Default to level 2 if no data
+  if (ranges.length === 0) return 2; // Default to position 2 if no data
 
-  // Sort ranges by position
+  // Sort ranges by position ascending (1, 2, 3, 4)
+  // Position 1 has highest levels, position 4 has lowest
   const sortedRanges = [...ranges].sort((a, b) => a.position - b.position);
 
-  // Find which position range the level fits into
-  // Higher level = lower position number (1 = best)
+  // Find the best (lowest number) position where the player's level fits
+  // A player fits a position if their level >= the minimum level for that position
   for (const range of sortedRanges) {
-    const midpoint = (range.minLevel + range.maxLevel) / 2;
-    if (level >= midpoint) {
+    if (level >= range.minLevel) {
       return range.position;
     }
   }
 
-  // If level is lower than all ranges, return the last (lowest) position
+  // If level is lower than all ranges, return the worst position
   return sortedRanges[sortedRanges.length - 1]?.position || 4;
 }
 

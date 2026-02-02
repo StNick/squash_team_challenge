@@ -7,8 +7,17 @@ import {
   timestamp,
   boolean,
   primaryKey,
+  pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+// Tournament status enum
+export const tournamentStatusEnum = pgEnum("tournament_status", ["draft", "active", "ended"]);
+export type TournamentStatus = "draft" | "active" | "ended";
+
+// Type for weekDates JSON structure: { 1: "2024-10-05", 2: "2024-10-12", ... }
+export type WeekDates = Record<number, string>;
 
 // Tournament table - stores tournament metadata
 export const tournaments = pgTable("tournaments", {
@@ -16,7 +25,10 @@ export const tournaments = pgTable("tournaments", {
   name: varchar("name", { length: 255 }).notNull(),
   numWeeks: integer("num_weeks").notNull().default(10),
   currentWeek: integer("current_week").notNull().default(1),
-  isActive: boolean("is_active").notNull().default(true),
+  status: tournamentStatusEnum("status").notNull().default("active"),
+  configData: text("config_data"), // JSON config for draft tournaments (cleared on activation)
+  weekDates: jsonb("week_dates").$type<WeekDates>(), // Maps week numbers to play dates
+  endedAt: timestamp("ended_at"), // When the tournament was ended
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -94,6 +106,7 @@ export const matches = pgTable("matches", {
   scoreA: integer("score_a"), // nullable until score entered
   scoreB: integer("score_b"),
   handicap: integer("handicap").default(0), // Percentage: Positive = A's score reduced, Negative = B's score reduced
+  scoredAt: timestamp("scored_at"), // When scores were first entered (for auditing)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

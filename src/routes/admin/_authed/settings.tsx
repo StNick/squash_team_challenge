@@ -67,19 +67,19 @@ function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
 
       {/* Change Password */}
       <Card>
         <CardHeader>
-          <h2 className="font-semibold text-gray-900">Change Password</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-white">Change Password</h2>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
             <div>
               <label
                 htmlFor="currentPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Current Password
               </label>
@@ -95,7 +95,7 @@ function SettingsPage() {
             <div>
               <label
                 htmlFor="newPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 New Password
               </label>
@@ -111,7 +111,7 @@ function SettingsPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Confirm New Password
               </label>
@@ -125,13 +125,13 @@ function SettingsPage() {
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-2 rounded">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+              <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 p-2 rounded">
                 Password changed successfully!
               </div>
             )}
@@ -154,10 +154,10 @@ function SettingsPage() {
       {/* Logout */}
       <Card>
         <CardHeader>
-          <h2 className="font-semibold text-gray-900">Session</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-white">Session</h2>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             End your current admin session and return to the login page.
           </p>
           <Button variant="danger" onClick={handleLogout}>
@@ -169,12 +169,12 @@ function SettingsPage() {
       {/* App Info */}
       <Card>
         <CardHeader>
-          <h2 className="font-semibold text-gray-900">About</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-white">About</h2>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-gray-600 space-y-1">
+          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>
-              <strong>Squash Team Challenge</strong>
+              <strong className="dark:text-white">Squash Team Challenge</strong>
             </p>
             <p>Version 1.0.0</p>
             <p>Built with TanStack Start, Drizzle ORM, and PostgreSQL</p>

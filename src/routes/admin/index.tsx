@@ -38,10 +38,10 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <h1 className="text-xl font-bold text-gray-900 text-center">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white text-center">
             Admin Login
           </h1>
         </CardHeader>
@@ -50,7 +50,7 @@ function AdminLoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Password
               </label>
@@ -66,7 +66,7 @@ function AdminLoginPage() {
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-2 rounded">
                 {error}
               </div>
             )}

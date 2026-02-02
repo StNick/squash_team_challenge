@@ -67,10 +67,10 @@ function PlayersPage() {
   if (players.length === 0) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Manage Players</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Players</h1>
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-gray-600">No players found. Create a tournament first.</p>
+            <p className="text-gray-600 dark:text-gray-400">No players found. Create a tournament first.</p>
           </CardContent>
         </Card>
       </div>
@@ -79,26 +79,26 @@ function PlayersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Manage Players</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Players</h1>
 
       {/* Swap Players Card */}
       <Card>
         <CardHeader>
-          <h2 className="font-semibold text-gray-900">Swap Players</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="font-semibold text-gray-900 dark:text-white">Swap Players</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Select two players from different teams to swap their positions
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Player 1
               </label>
               <select
                 value={playerA ?? ""}
                 onChange={(e) => setPlayerA(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select a player</option>
                 {Object.values(playersByTeam).map(({ team, players: teamPlayers }) => (
@@ -114,13 +114,13 @@ function PlayersPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Player 2
               </label>
               <select
                 value={playerB ?? ""}
                 onChange={(e) => setPlayerB(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select a player</option>
                 {Object.values(playersByTeam).map(({ team, players: teamPlayers }) => (
@@ -170,11 +170,11 @@ function PlayersPage() {
                         className="group flex items-center justify-between text-sm"
                       >
                         <span className="flex items-center gap-2">
-                          <span className="text-gray-400 w-4">{player.position}.</span>
-                          <span className={player.isCaptain ? "font-medium" : ""}>
+                          <span className="text-gray-400 dark:text-gray-500 w-4">{player.position}.</span>
+                          <span className={`dark:text-white ${player.isCaptain ? "font-medium" : ""}`}>
                             {player.name}
                           </span>
-                          <span className="text-gray-400 text-xs">[{player.level.toLocaleString()}]</span>
+                          <span className="text-gray-400 dark:text-gray-500 text-xs">[{player.level.toLocaleString()}]</span>
                           {player.isCaptain ? (
                             <span
                               className={`text-xs px-1.5 py-0.5 rounded ${colors.text} ${colors.bg}`}

@@ -8,7 +8,7 @@ import { calculatePositionLevelRanges, calculateSuggestedLevel } from "../lib/ge
 export const getReserves = createServerFn({ method: "GET" }).handler(
   async () => {
     const tournament = await db.query.tournaments.findFirst({
-      where: eq(tournaments.isActive, true),
+      where: eq(tournaments.status, "active"),
     });
 
     if (!tournament) {
@@ -28,7 +28,7 @@ export const getReserves = createServerFn({ method: "GET" }).handler(
 export const getActiveReserves = createServerFn({ method: "GET" }).handler(
   async () => {
     const tournament = await db.query.tournaments.findFirst({
-      where: eq(tournaments.isActive, true),
+      where: eq(tournaments.status, "active"),
     });
 
     if (!tournament) {
@@ -72,7 +72,7 @@ export const createReserve = createServerFn({ method: "POST" })
     }
 
     const tournament = await db.query.tournaments.findFirst({
-      where: eq(tournaments.isActive, true),
+      where: eq(tournaments.status, "active"),
     });
 
     if (!tournament) {
@@ -193,7 +193,7 @@ export const addReservesFromDatabase = createServerFn({ method: "POST" })
     }
 
     const tournament = await db.query.tournaments.findFirst({
-      where: eq(tournaments.isActive, true),
+      where: eq(tournaments.status, "active"),
     });
 
     if (!tournament) {
@@ -251,7 +251,7 @@ export const addReservesFromDatabase = createServerFn({ method: "POST" })
 export const updateReserveLevelsFromDatabase = createServerFn({ method: "POST" }).handler(
   async () => {
     const tournament = await db.query.tournaments.findFirst({
-      where: eq(tournaments.isActive, true),
+      where: eq(tournaments.status, "active"),
     });
 
     if (!tournament) {

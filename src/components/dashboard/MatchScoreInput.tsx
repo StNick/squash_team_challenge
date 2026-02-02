@@ -145,29 +145,29 @@ export function MatchScoreInput({
         style={{ color: getTeamTextColor(color), justifyContent: align === "right" ? "flex-end" : "flex-start" }}
       >
         {isSubstitute && (
-          <span className="text-xs px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-bold">
+          <span className="text-xs px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded font-bold">
             SUB
           </span>
         )}
         <span>{name}</span>
       </div>
       {isSubstitute && (
-        <div className="text-xs text-gray-400">
+        <div className="text-xs text-gray-400 dark:text-gray-500">
           (for {originalName})
         </div>
       )}
-      {level !== null && <span className="text-xs text-gray-500">[{level}]</span>}
+      {level !== null && <span className="text-xs text-gray-500 dark:text-gray-400">[{level}]</span>}
     </div>
   );
 
   return (
-    <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg">
+    <div className="flex flex-col gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
       <div className="flex items-center justify-center gap-2">
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           Position {match.position}
         </div>
         {handicapPct !== 0 && (
-          <span className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded font-medium">
+          <span className="text-xs px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded font-medium">
             {formatHandicap(handicapPct)}
           </span>
         )}
@@ -198,14 +198,14 @@ export function MatchScoreInput({
             }
           }}
           className={`w-20 h-12 text-center text-xl font-bold ${
-            hasExistingScores ? "bg-gray-100 cursor-not-allowed" : ""
+            hasExistingScores ? "bg-gray-100 dark:bg-gray-600 cursor-not-allowed" : ""
           }`}
           style={{ borderColor: teamAColor }}
           disabled={inputsDisabled}
           aria-label={`Score for ${displayNameA}`}
         />
 
-        <span className="text-gray-400 font-bold">-</span>
+        <span className="text-gray-400 dark:text-gray-500 font-bold">-</span>
 
         <Input
           type="text"
@@ -219,7 +219,7 @@ export function MatchScoreInput({
             }
           }}
           className={`w-20 h-12 text-center text-xl font-bold ${
-            hasExistingScores ? "bg-gray-100 cursor-not-allowed" : ""
+            hasExistingScores ? "bg-gray-100 dark:bg-gray-600 cursor-not-allowed" : ""
           }`}
           style={{ borderColor: teamBColor }}
           disabled={inputsDisabled}
@@ -260,7 +260,7 @@ export function MatchScoreInput({
             aria-label={`Score for ${displayNameA}`}
           />
 
-          <span className="text-gray-400 font-bold">-</span>
+          <span className="text-gray-400 dark:text-gray-500 font-bold">-</span>
 
           <Input
             type="text"
@@ -304,7 +304,7 @@ export function MatchScoreInput({
 
       {/* Adjusted scores display when handicap is applied */}
       {hasExistingScores && handicapPct !== 0 && adjustedScoreA !== null && adjustedScoreB !== null && (
-        <div className="text-center text-xs text-gray-500 mt-1 p-2 bg-purple-50 rounded">
+        <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-1 p-2 bg-purple-50 dark:bg-purple-900/30 rounded">
           <span className="font-medium">Weighted result:</span>{" "}
           <span className="font-bold">{adjustedScoreA} - {adjustedScoreB}</span>
           <span className="relative inline-block ml-1 group">
@@ -336,7 +336,7 @@ export function MatchScoreInput({
         </Button>
       )}
 
-      {error && <div className="text-xs text-red-600 text-center">{error}</div>}
+      {error && <div className="text-xs text-red-600 dark:text-red-400 text-center">{error}</div>}
 
       {/* Confirmation Modal */}
       <Modal
@@ -345,7 +345,7 @@ export function MatchScoreInput({
         title="Confirm Score Submission"
       >
         <div className="space-y-4">
-          <p className="text-gray-700">
+          <p className="text-gray-700 dark:text-gray-300">
             You are about to capture the score between{" "}
             <strong style={{ color: getTeamTextColor(teamAColor) }}>{displayNameA}</strong>{" "}
             ({scoreA}) and{" "}
@@ -353,10 +353,10 @@ export function MatchScoreInput({
             ({scoreB}).
           </p>
           {handicapPct !== 0 && (
-            <p className="text-gray-600 text-sm bg-purple-50 p-2 rounded">
+            <p className="text-gray-600 dark:text-gray-400 text-sm bg-purple-50 dark:bg-purple-900/30 p-2 rounded">
               <span className="font-medium">Handicap applied:</span> {formatHandicap(handicapPct)}
               <br />
-              <span className="text-gray-500">
+              <span className="text-gray-500 dark:text-gray-400">
                 Adjusted scores for standings:{" "}
                 {(() => {
                   const preview = getPreviewAdjustedScores();
@@ -365,7 +365,7 @@ export function MatchScoreInput({
               </span>
             </p>
           )}
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
             You will not be able to change this. Are you sure?
           </p>
           <div className="flex gap-3 pt-2">

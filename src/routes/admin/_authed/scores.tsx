@@ -92,10 +92,10 @@ function ScoresPage() {
   if (!tournament) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Scores</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Scores</h1>
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-gray-600">No active tournament.</p>
+            <p className="text-gray-600 dark:text-gray-400">No active tournament.</p>
           </CardContent>
         </Card>
       </div>
@@ -277,12 +277,12 @@ function ScoresPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Edit Scores</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Edit Scores</h1>
 
       {/* Handicap explanation */}
       <Card>
-        <CardContent className="text-sm text-gray-600">
-          <p className="font-medium text-gray-800 mb-1">Handicap System</p>
+        <CardContent className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="font-medium text-gray-800 dark:text-gray-200 mb-1">Handicap System</p>
           <p>Recommended handicap is calculated as half the level advantage. For example, a player with 48% higher level gets a 24% handicap applied to their actual score.</p>
         </CardContent>
       </Card>
@@ -290,11 +290,11 @@ function ScoresPage() {
       {/* Week Selector */}
       <Card>
         <CardContent className="flex items-center gap-4">
-          <label className="font-medium text-gray-700">Select Week:</label>
+          <label className="font-medium text-gray-700 dark:text-gray-300">Select Week:</label>
           <select
             value={selectedWeek}
             onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           >
             {Array.from({ length: tournament.numWeeks }, (_, i) => (
               <option key={i + 1} value={i + 1}>
@@ -309,20 +309,20 @@ function ScoresPage() {
       {/* Matchups */}
       {weekData?.matchups.map((matchup) => (
         <Card key={matchup.id}>
-          <CardHeader className="bg-gray-100">
+          <CardHeader className="bg-gray-100 dark:bg-gray-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div
                   className="w-4 h-4 rounded-full border border-gray-300"
                   style={{ backgroundColor: matchup.teamA.color }}
                 />
-                <span className="font-bold">{matchup.teamA.name}</span>
+                <span className="font-bold dark:text-white">{matchup.teamA.name}</span>
               </div>
-              <div className="text-xl font-bold">
+              <div className="text-xl font-bold dark:text-white">
                 {matchup.teamAScore} - {matchup.teamBScore}
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">{matchup.teamB.name}</span>
+                <span className="font-bold dark:text-white">{matchup.teamB.name}</span>
                 <div
                   className="w-4 h-4 rounded-full border border-gray-300"
                   style={{ backgroundColor: matchup.teamB.color }}
@@ -333,7 +333,7 @@ function ScoresPage() {
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full min-w-[900px]">
               <thead>
-                <tr className="border-b border-gray-200 text-sm text-gray-500">
+                <tr className="border-b border-gray-200 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400">
                   <th className="py-2 px-2 text-left w-10">Pos</th>
                   <th className="py-2 px-2 text-left">Player A</th>
                   <th className="py-2 px-2 text-left w-40">Sub A</th>
@@ -359,11 +359,11 @@ function ScoresPage() {
                   const recommended = recommendedHandicaps[match.id];
 
                   return (
-                    <tr key={match.id} className="border-b border-gray-100">
-                      <td className="py-2 px-2 text-gray-400">{match.position}</td>
+                    <tr key={match.id} className="border-b border-gray-100 dark:border-gray-700">
+                      <td className="py-2 px-2 text-gray-400 dark:text-gray-500">{match.position}</td>
                       <td className="py-2 px-2">
-                        <div className="text-sm">{match.playerA.name}</div>
-                        <div className="text-xs text-gray-400">[{match.playerA.level}]</div>
+                        <div className="text-sm dark:text-white">{match.playerA.name}</div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">[{match.playerA.level}]</div>
                       </td>
                       <td className="py-2 px-2">
                         {hasSubstitute(matchWithSubs, "A") ? (
@@ -387,7 +387,7 @@ function ScoresPage() {
                               handleSubstituteChange(match.id, "A", e.target.value)
                             }
                             disabled={savingSubstitute === `${match.id}-A`}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           >
                             <option value="none">None</option>
                             {playerDatabase.map((p) => (
@@ -419,14 +419,14 @@ function ScoresPage() {
                             />
                           </div>
                         ) : (
-                          <div className="text-center font-medium">
+                          <div className="text-center font-medium dark:text-white">
                             {match.scoreA ?? "-"} - {match.scoreB ?? "-"}
                           </div>
                         )}
                       </td>
                       <td className="py-2 px-2">
-                        <div className="text-sm">{match.playerB.name}</div>
-                        <div className="text-xs text-gray-400">[{match.playerB.level}]</div>
+                        <div className="text-sm dark:text-white">{match.playerB.name}</div>
+                        <div className="text-xs text-gray-400 dark:text-gray-500">[{match.playerB.level}]</div>
                       </td>
                       <td className="py-2 px-2">
                         {hasSubstitute(matchWithSubs, "B") ? (
@@ -450,7 +450,7 @@ function ScoresPage() {
                               handleSubstituteChange(match.id, "B", e.target.value)
                             }
                             disabled={savingSubstitute === `${match.id}-B`}
-                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           >
                             <option value="none">None</option>
                             {playerDatabase.map((p) => (
@@ -470,7 +470,7 @@ function ScoresPage() {
                               handleHandicapChange(match.id, parseInt(e.target.value))
                             }
                             disabled={savingHandicap === match.id}
-                            className="w-20 px-1 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-20 px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           >
                             {/* Negative handicaps (B's score reduced) */}
                             {HANDICAP_OPTIONS.slice().reverse().map((h) =>
@@ -552,7 +552,7 @@ function ScoresPage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Name
             </label>
             <Input
@@ -563,7 +563,7 @@ function ScoresPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Level (optional)
             </label>
             <Input
@@ -573,7 +573,7 @@ function ScoresPage() {
               onChange={(e) => setCustomSubLevel(e.target.value)}
               placeholder="e.g., 500000"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Used for handicap calculation. Leave blank if unknown.
             </p>
           </div>

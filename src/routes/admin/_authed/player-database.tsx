@@ -202,8 +202,8 @@ function PlayerDatabasePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Player Database</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Player Database</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Manage your global player directory. These players can be added to tournaments.
           </p>
         </div>
@@ -233,18 +233,18 @@ function PlayerDatabasePage() {
 
       {/* MySquash Import Info */}
       <Card>
-        <CardContent className="text-sm text-gray-600">
-          <p className="font-medium text-gray-800 mb-1">Importing from MySquash</p>
+        <CardContent className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="font-medium text-gray-800 dark:text-gray-200 mb-1">Importing from MySquash</p>
           <p className="mb-2">
             You can import players from Squash New Zealand's MySquash portal. Export the "Grading List"
             as a CSV file, then use the Import button above.
           </p>
-          <p className="text-amber-700 bg-amber-50 p-2 rounded">
+          <p className="text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 p-2 rounded">
             <strong>Important:</strong> The database has a limit of 500 players. Apply filters in MySquash
             before exporting (e.g. filter by club or district) to only import players who might participate.
             Players will be imported until the limit is reached.
           </p>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">
             Current: {players.length} / 500 players
           </p>
         </CardContent>
@@ -289,7 +289,7 @@ function PlayerDatabasePage() {
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 text-sm text-gray-500">
+                <tr className="border-b border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
                   <th className="py-3 px-4 text-left">Name</th>
                   <th className="py-3 px-4 text-left hidden lg:table-cell">Code</th>
                   <th className="py-3 px-4 text-left hidden sm:table-cell">Email</th>
@@ -301,25 +301,25 @@ function PlayerDatabasePage() {
               </thead>
               <tbody>
                 {players.map((player) => (
-                  <tr key={player.id} className="border-b border-gray-100">
+                  <tr key={player.id} className="border-b border-gray-100 dark:border-gray-700">
                     <td className="py-3 px-4">
-                      <div className="font-medium">{player.name}</div>
+                      <div className="font-medium dark:text-white">{player.name}</div>
                       {player.notes && (
-                        <div className="text-xs text-gray-500 truncate max-w-[200px]">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
                           {player.notes}
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 hidden lg:table-cell font-mono text-xs text-gray-500">
+                    <td className="py-3 px-4 hidden lg:table-cell font-mono text-xs text-gray-500 dark:text-gray-400">
                       {player.playerCode || "-"}
                     </td>
-                    <td className="py-3 px-4 hidden sm:table-cell">
+                    <td className="py-3 px-4 hidden sm:table-cell dark:text-gray-300">
                       {player.email || "-"}
                     </td>
-                    <td className="py-3 px-4 hidden md:table-cell">
+                    <td className="py-3 px-4 hidden md:table-cell dark:text-gray-300">
                       {player.phone || "-"}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono text-sm">
+                    <td className="py-3 px-4 text-right font-mono text-sm dark:text-white">
                       {player.level.toLocaleString()}
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -368,7 +368,7 @@ function PlayerDatabasePage() {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Name *
             </label>
             <Input
@@ -382,7 +382,7 @@ function PlayerDatabasePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email
             </label>
             <Input
@@ -397,7 +397,7 @@ function PlayerDatabasePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Phone
             </label>
             <Input
@@ -412,7 +412,7 @@ function PlayerDatabasePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Level (1 - 1,000,000)
             </label>
             <Input
@@ -429,7 +429,7 @@ function PlayerDatabasePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Notes
             </label>
             <textarea
@@ -438,7 +438,7 @@ function PlayerDatabasePage() {
                 setFormData({ ...formData, notes: e.target.value })
               }
               placeholder="Any additional notes..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
               rows={2}
             />
           </div>

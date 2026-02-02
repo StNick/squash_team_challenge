@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, Outlet, Link, useNavigate } from "@tanstack/react-router";
 import { verifyAdminSession, adminLogout } from "~/server/lib/auth";
 import { Button } from "~/components/ui/Button";
+import { ThemeToggle } from "~/components/ui/ThemeToggle";
 
 export const Route = createFileRoute("/admin/_authed")({
   beforeLoad: async () => {
@@ -21,9 +22,9 @@ function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Admin Header */}
-      <header className="bg-gray-900 text-white">
+      <header className="bg-gray-900 dark:bg-gray-950 text-white">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
@@ -92,6 +93,7 @@ function AdminLayout() {
               <Link to="/" className="text-gray-300 hover:text-white text-sm">
                 Public Dashboard
               </Link>
+              <ThemeToggle className="text-gray-300 hover:text-white hover:bg-gray-800" />
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
@@ -101,7 +103,7 @@ function AdminLayout() {
       </header>
 
       {/* Mobile Navigation */}
-      <nav className="sm:hidden bg-gray-800 text-white overflow-x-auto">
+      <nav className="sm:hidden bg-gray-800 dark:bg-gray-900 text-white overflow-x-auto">
         <div className="flex px-4 py-2 gap-4">
           {/* Tournament Section */}
           <Link

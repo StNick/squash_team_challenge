@@ -7,6 +7,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import appCss from "~/styles.css?url";
+import { DevBanner, isDev } from "~/components/ui/DevBanner";
+import { ThemeProvider, themeScript } from "~/lib/theme";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -28,6 +30,12 @@ export const Route = createRootRoute({
         href: appCss,
       },
     ],
+    scripts: [
+      {
+        // Prevent flash of wrong theme on page load
+        children: themeScript,
+      },
+    ],
   }),
   component: RootComponent,
 });
@@ -35,7 +43,9 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <RootDocument>
-      <Outlet />
+      <ThemeProvider>
+        <Outlet />
+      </ThemeProvider>
     </RootDocument>
   );
 }
@@ -46,7 +56,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-gray-50">
+      <body className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDev() ? "pt-7" : ""}`}>
+        <DevBanner />
         {children}
         <Scripts />
       </body>

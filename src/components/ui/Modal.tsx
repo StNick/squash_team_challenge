@@ -47,7 +47,7 @@ export function Modal({
       {/* Modal content */}
       <div
         className={cn(
-          "relative bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto",
+          "relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto",
           className
         )}
         role="dialog"
@@ -55,13 +55,13 @@ export function Modal({
         aria-labelledby={title ? "modal-title" : undefined}
       >
         {title && (
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <h2 id="modal-title" className="text-lg font-semibold text-gray-900 dark:text-white">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               aria-label="Close modal"
             >
               <svg
