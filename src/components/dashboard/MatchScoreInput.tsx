@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "~/components/ui/Input";
 import { Button } from "~/components/ui/Button";
 import { Modal } from "~/components/ui/Modal";
-import { getTeamTextColor } from "~/lib/constants";
+import { getTeamTextColor, TEAM_COLORS } from "~/lib/constants";
 import type { Match, Player, Reserve } from "~/server/db/schema";
 
 interface MatchScoreInputProps {
@@ -124,6 +124,12 @@ export function MatchScoreInput({
     return { a: rawA, b: rawB };
   };
 
+  // Check if the team color is White (needs special dark mode handling)
+  const isWhiteTeam = (colorValue: string) => {
+    const color = TEAM_COLORS.find((c) => c.value === colorValue);
+    return color?.name === "White";
+  };
+
   const PlayerDisplay = ({
     name,
     originalName,
@@ -141,8 +147,8 @@ export function MatchScoreInput({
   }) => (
     <div className={align === "right" ? "text-right" : "text-left"}>
       <div
-        className="text-sm font-medium flex items-center gap-1"
-        style={{ color: getTeamTextColor(color), justifyContent: align === "right" ? "flex-end" : "flex-start" }}
+        className={`text-sm font-medium flex items-center gap-1 ${isWhiteTeam(color) ? "text-gray-700 dark:text-gray-300" : ""}`}
+        style={{ color: isWhiteTeam(color) ? undefined : getTeamTextColor(color), justifyContent: align === "right" ? "flex-end" : "flex-start" }}
       >
         {isSubstitute && (
           <span className="text-xs px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded font-bold">
@@ -347,9 +353,15 @@ export function MatchScoreInput({
         <div className="space-y-4">
           <p className="text-gray-700 dark:text-gray-300">
             You are about to capture the score between{" "}
-            <strong style={{ color: getTeamTextColor(teamAColor) }}>{displayNameA}</strong>{" "}
+            <strong
+              className={isWhiteTeam(teamAColor) ? "text-gray-700 dark:text-gray-300" : ""}
+              style={{ color: isWhiteTeam(teamAColor) ? undefined : getTeamTextColor(teamAColor) }}
+            >{displayNameA}</strong>{" "}
             ({scoreA}) and{" "}
-            <strong style={{ color: getTeamTextColor(teamBColor) }}>{displayNameB}</strong>{" "}
+            <strong
+              className={isWhiteTeam(teamBColor) ? "text-gray-700 dark:text-gray-300" : ""}
+              style={{ color: isWhiteTeam(teamBColor) ? undefined : getTeamTextColor(teamBColor) }}
+            >{displayNameB}</strong>{" "}
             ({scoreB}).
           </p>
           {handicapPct !== 0 && (
