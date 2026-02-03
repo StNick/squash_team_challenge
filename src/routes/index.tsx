@@ -1,8 +1,8 @@
 "use client";
 
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { getDashboardData, getTournamentList } from "~/server/functions/tournament";
+import { useState, useEffect } from "react";
+import { getDashboardData, verifyAccessCode } from "~/server/functions/tournament";
 import { submitMatchScore } from "~/server/functions/matches";
 import { TeamCard } from "~/components/dashboard/TeamCard";
 import { WeeklyMatchupCard } from "~/components/dashboard/WeeklyMatchup";
@@ -12,90 +12,192 @@ import { DutySchedule } from "~/components/dashboard/DutySchedule";
 import { ReserveModal } from "~/components/dashboard/ReserveModal";
 import { Button } from "~/components/ui/Button";
 import { Card, CardContent, CardHeader } from "~/components/ui/Card";
+import { Input } from "~/components/ui/Input";
 import { ThemeToggle } from "~/components/ui/ThemeToggle";
-import { TournamentSelector } from "~/components/ui/TournamentSelector";
-import type { TournamentStatus } from "~/server/db/schema";
 import { formatWeekDate, formatDate } from "~/lib/utils";
+import { getStoredAccess, setStoredAccess, clearStoredAccess } from "~/lib/tournamentAccess";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    tournament: search.tournament ? Number(search.tournament) : undefined,
-  }),
-  loaderDeps: ({ search: { tournament } }) => ({ tournament }),
-  loader: async ({ deps }) => {
-    const [dashboardData, tournamentList] = await Promise.all([
-      getDashboardData({ data: { tournamentId: deps.tournament } }),
-      getTournamentList(),
-    ]);
-    return {
-      ...dashboardData,
-      allTournaments: tournamentList.tournaments,
-    };
-  },
   component: HomePage,
 });
 
 function HomePage() {
-  const { tournament, allTournaments } = Route.useLoaderData();
   const router = useRouter();
-  const navigate = Route.useNavigate();
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"matches" | "standings">("matches");
 
-  // Determine if this is an ended tournament (read-only mode)
-  const isEnded = tournament?.status === "ended";
-  const isActive = tournament?.status === "active";
+  // Access code state
+  const [accessCode, setAccessCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isCheckingStored, setIsCheckingStored] = useState(true);
 
-  // Filter tournaments for selector (only active and ended, not drafts)
-  const selectableTournaments = allTournaments.filter(
-    (t) => t.status === "active" || t.status === "ended"
-  );
+  // Dashboard data (loaded after successful code entry or from stored access)
+  const [dashboardData, setDashboardData] = useState<Awaited<ReturnType<typeof getDashboardData>> | null>(null);
 
-  const handleTournamentSelect = (id: number) => {
-    navigate({ search: { tournament: id } });
+  // Check stored access code on mount
+  useEffect(() => {
+    const checkStoredAccess = async () => {
+      const stored = getStoredAccess();
+      if (!stored) {
+        setIsCheckingStored(false);
+        return;
+      }
+
+      try {
+        // Verify the stored code is still valid
+        const result = await verifyAccessCode({ data: { code: stored.code } });
+        if (result.success && result.tournamentId === stored.tournamentId) {
+          // Load the tournament data
+          const data = await getDashboardData({ data: { tournamentId: stored.tournamentId } });
+          setDashboardData(data);
+        } else {
+          // Invalid stored code - clear it
+          clearStoredAccess();
+        }
+      } catch {
+        // Error verifying - clear stored access
+        clearStoredAccess();
+      } finally {
+        setIsCheckingStored(false);
+      }
+    };
+
+    checkStoredAccess();
+  }, []);
+
+  const handleAccessCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsVerifying(true);
+
+    try {
+      const result = await verifyAccessCode({ data: { code: accessCode } });
+
+      if (result.success && result.tournamentId) {
+        // Store the code and load the tournament
+        setStoredAccess(result.tournamentId, accessCode.toUpperCase());
+        const data = await getDashboardData({ data: { tournamentId: result.tournamentId } });
+        setDashboardData(data);
+      } else {
+        setError(result.error || "Invalid access code");
+        setAccessCode("");
+      }
+    } catch {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
-  if (!tournament) {
+  const handleChangeTournament = () => {
+    clearStoredAccess();
+    setDashboardData(null);
+    setAccessCode("");
+    setError(null);
+  };
+
+  const tournament = dashboardData?.tournament;
+
+  // Show loading state while checking stored access
+  if (isCheckingStored) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex justify-end py-3">
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <Link
-                to="/admin"
-                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                Admin
-              </Link>
-            </div>
+            <ThemeToggle />
           </div>
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Squash Team Challenge
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                No active tournament. Check back soon!
-              </p>
-              {selectableTournaments.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                    View a past tournament:
-                  </p>
-                  <TournamentSelector
-                    tournaments={selectableTournaments}
-                    selectedId={null}
-                    onSelect={handleTournamentSelect}
-                  />
-                </div>
-              )}
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600 mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">Loading...</p>
             </div>
           </div>
         </div>
       </div>
     );
   }
+
+  // Landing page - no tournament loaded
+  if (!tournament) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+        {/* Header */}
+        <header className="bg-white dark:bg-gray-800 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                Squash Team Challenge
+              </h1>
+              <div className="flex items-center gap-4">
+                <ThemeToggle />
+                <Link
+                  to="/admin"
+                  className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  Admin
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main content - centered access code form */}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm">
+            <Card>
+              <CardHeader className="text-center">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Welcome
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Enter your tournament access code to view the dashboard
+                </p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAccessCodeSubmit} className="space-y-4">
+                  <div>
+                    <Input
+                      type="text"
+                      value={accessCode}
+                      onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                      placeholder="e.g., A76BN3"
+                      className="w-full font-mono uppercase text-center text-2xl tracking-widest py-3"
+                      maxLength={6}
+                      autoFocus
+                      disabled={isVerifying}
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-2 rounded text-center">
+                      {error}
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={accessCode.length < 6 || isVerifying}
+                  >
+                    {isVerifying ? "Verifying..." : "Enter"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
+              Don't have a code? Contact your tournament organizer.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Tournament dashboard
+  const isEnded = tournament.status === "ended";
+  const isActive = tournament.status === "active";
 
   const currentWeekData = tournament.weeklyData[tournament.currentWeek];
   const allDuties = Object.values(tournament.weeklyData)
@@ -113,7 +215,7 @@ function HomePage() {
     scoreA: number,
     scoreB: number
   ) => {
-    if (isEnded) return; // Don't allow score entry for ended tournaments
+    if (isEnded) return;
     await submitMatchScore({ data: { matchId, scoreA, scoreB } });
     router.invalidate();
   };
@@ -138,18 +240,9 @@ function HomePage() {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {tournament.name}
-                </h1>
-                {selectableTournaments.length > 1 && (
-                  <TournamentSelector
-                    tournaments={selectableTournaments}
-                    selectedId={tournament.id}
-                    onSelect={handleTournamentSelect}
-                  />
-                )}
-              </div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                {tournament.name}
+              </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Week {tournament.currentWeek} of {tournament.numWeeks}
                 {tournament.weekDates?.[tournament.currentWeek] && (
@@ -170,6 +263,14 @@ function HomePage() {
                   Need a Reserve?
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleChangeTournament}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Change Tournament
+              </Button>
               <ThemeToggle />
               <Link
                 to="/admin"

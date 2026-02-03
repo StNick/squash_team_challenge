@@ -25,6 +25,7 @@ function CreateTournamentPage() {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
   const [selectedReserveIds, setSelectedReserveIds] = useState<number[]>([]);
   const [reservesCsv, setReservesCsv] = useState("");
+  const [password, setPassword] = useState("");
   // Advanced options for pre-defined tournament configuration
   const [dinnerDutiesOrder, setDinnerDutiesOrder] = useState("");
   const [cleanupDutiesOrder, setCleanupDutiesOrder] = useState("");
@@ -49,6 +50,7 @@ function CreateTournamentPage() {
           selectedPlayerIds,
           selectedReserveIds,
           reservesCsv,
+          password: password.trim() || undefined,
           dinnerDutiesOrder: dinnerDutiesOrder.trim() || undefined,
           cleanupDutiesOrder: cleanupDutiesOrder.trim() || undefined,
           firstOnCourtOrder: firstOnCourtOrder.trim() || undefined,
@@ -257,6 +259,27 @@ function CreateTournamentPage() {
                   className="w-full"
                 />
               </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Access Code
+              </label>
+              <Input
+                id="password"
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value.toUpperCase())}
+                placeholder="Auto-generated if blank"
+                className="w-full font-mono uppercase text-lg tracking-widest"
+                maxLength={6}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Players will use this code to access the tournament. A unique 6-character code will be auto-generated if left blank.
+              </p>
             </div>
           </CardContent>
         </Card>

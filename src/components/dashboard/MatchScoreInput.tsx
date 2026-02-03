@@ -124,10 +124,20 @@ export function MatchScoreInput({
     return { a: rawA, b: rawB };
   };
 
-  // Check if the team color is White (needs special dark mode handling)
+  // Check if the team color needs special handling in dark/light mode
   const isWhiteTeam = (colorValue: string) => {
     const color = TEAM_COLORS.find((c) => c.value === colorValue);
     return color?.name === "White";
+  };
+
+  const isBlackTeam = (colorValue: string) => {
+    const color = TEAM_COLORS.find((c) => c.value === colorValue);
+    return color?.name === "Black";
+  };
+
+  // Check if color needs neutral fallback (White in light mode, Black in dark mode)
+  const needsNeutralColor = (colorValue: string) => {
+    return isWhiteTeam(colorValue) || isBlackTeam(colorValue);
   };
 
   const PlayerDisplay = ({
@@ -147,8 +157,8 @@ export function MatchScoreInput({
   }) => (
     <div className={align === "right" ? "text-right" : "text-left"}>
       <div
-        className={`text-sm font-medium flex items-center gap-1 ${isWhiteTeam(color) ? "text-gray-700 dark:text-gray-300" : ""}`}
-        style={{ color: isWhiteTeam(color) ? undefined : getTeamTextColor(color), justifyContent: align === "right" ? "flex-end" : "flex-start" }}
+        className={`text-sm font-medium flex items-center gap-1 ${needsNeutralColor(color) ? "text-gray-700 dark:text-gray-300" : ""}`}
+        style={{ color: needsNeutralColor(color) ? undefined : getTeamTextColor(color), justifyContent: align === "right" ? "flex-end" : "flex-start" }}
       >
         {isSubstitute && (
           <span className="text-xs px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded font-bold">
@@ -354,13 +364,13 @@ export function MatchScoreInput({
           <p className="text-gray-700 dark:text-gray-300">
             You are about to capture the score between{" "}
             <strong
-              className={isWhiteTeam(teamAColor) ? "text-gray-700 dark:text-gray-300" : ""}
-              style={{ color: isWhiteTeam(teamAColor) ? undefined : getTeamTextColor(teamAColor) }}
+              className={needsNeutralColor(teamAColor) ? "text-gray-700 dark:text-gray-300" : ""}
+              style={{ color: needsNeutralColor(teamAColor) ? undefined : getTeamTextColor(teamAColor) }}
             >{displayNameA}</strong>{" "}
             ({scoreA}) and{" "}
             <strong
-              className={isWhiteTeam(teamBColor) ? "text-gray-700 dark:text-gray-300" : ""}
-              style={{ color: isWhiteTeam(teamBColor) ? undefined : getTeamTextColor(teamBColor) }}
+              className={needsNeutralColor(teamBColor) ? "text-gray-700 dark:text-gray-300" : ""}
+              style={{ color: needsNeutralColor(teamBColor) ? undefined : getTeamTextColor(teamBColor) }}
             >{displayNameB}</strong>{" "}
             ({scoreB}).
           </p>

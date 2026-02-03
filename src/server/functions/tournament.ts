@@ -29,6 +29,33 @@ import {
 } from "../lib/generation";
 import { sql } from "drizzle-orm";
 
+// Generate a simple 6-character alphanumeric access code (e.g., A76BN3)
+function generateAccessCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed confusing chars: 0, O, 1, I
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Generate a unique access code (checks for collisions)
+async function generateUniqueAccessCode(): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateAccessCode();
+    // Check if code already exists (case-insensitive)
+    const existing = await db.query.tournaments.findFirst({
+      where: sql`UPPER(${tournaments.password}) = ${code}`,
+      columns: { id: true },
+    });
+    if (!existing) {
+      return code;
+    }
+  }
+  // Fallback: very unlikely to reach here
+  throw new Error("Could not generate unique access code");
+}
+
 // Configuration stored in configData for draft tournaments
 export interface TournamentConfig {
   numTeams: number;
@@ -527,6 +554,7 @@ export const getTournamentList = createServerFn({ method: "GET" }).handler(
         configData: true,
         weekDates: true,
         endedAt: true,
+        password: true,
       },
       with: {
         teams: {
@@ -556,6 +584,7 @@ export const getTournamentList = createServerFn({ method: "GET" }).handler(
         weekDates: t.weekDates,
         endedAt: t.endedAt,
         numTeams,
+        hasPassword: !!t.password, // Include whether password is set (but not the password itself)
       };
     });
 
@@ -646,6 +675,60 @@ export const updateTournamentStatus = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+// Update tournament access code
+export const updateTournamentAccessCode = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      tournamentId: number;
+      accessCode: string | null; // null to generate a new random code
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    const { tournamentId, accessCode } = data;
+
+    // Get the tournament to verify it exists
+    const tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, tournamentId),
+    });
+
+    if (!tournament) {
+      throw new Error("Tournament not found");
+    }
+
+    let newCode: string;
+
+    if (accessCode === null) {
+      // Generate a new unique code
+      newCode = await generateUniqueAccessCode();
+    } else {
+      // Validate format: 6 alphanumeric characters
+      const normalizedCode = accessCode.toUpperCase().trim();
+      if (!/^[A-Z0-9]{6}$/.test(normalizedCode)) {
+        throw new Error("Access code must be exactly 6 alphanumeric characters");
+      }
+
+      // Check if code already exists on another tournament
+      const existing = await db.query.tournaments.findFirst({
+        where: sql`UPPER(${tournaments.password}) = ${normalizedCode} AND ${tournaments.id} != ${tournamentId}`,
+        columns: { id: true },
+      });
+
+      if (existing) {
+        throw new Error("This access code is already in use by another tournament");
+      }
+
+      newCode = normalizedCode;
+    }
+
+    // Update the tournament
+    await db
+      .update(tournaments)
+      .set({ password: newCode, updatedAt: new Date() })
+      .where(eq(tournaments.id, tournamentId));
+
+    return { success: true, accessCode: newCode };
+  });
+
 // Create a new tournament (draft only - generation happens on activation)
 export const createTournament = createServerFn({ method: "POST" })
   .inputValidator(
@@ -657,6 +740,7 @@ export const createTournament = createServerFn({ method: "POST" })
       selectedPlayerIds?: number[];
       selectedReserveIds?: number[];
       reservesCsv?: string;
+      password?: string;
       // Advanced options for pre-defined tournament configuration
       dinnerDutiesOrder?: string;
       cleanupDutiesOrder?: string;
@@ -673,6 +757,7 @@ export const createTournament = createServerFn({ method: "POST" })
       selectedPlayerIds = [],
       selectedReserveIds = [],
       reservesCsv,
+      password,
       dinnerDutiesOrder,
       cleanupDutiesOrder,
       firstOnCourtOrder,
@@ -717,6 +802,9 @@ export const createTournament = createServerFn({ method: "POST" })
 
     // Create tournament as draft with config stored
     // Generation happens when the tournament is activated
+    // Always require an access code - generate one if not provided
+    const accessCode = password?.trim()?.toUpperCase() || await generateUniqueAccessCode();
+
     const [tournament] = await db
       .insert(tournaments)
       .values({
@@ -725,6 +813,7 @@ export const createTournament = createServerFn({ method: "POST" })
         currentWeek: 1,
         status: "draft",
         configData: JSON.stringify(config),
+        password: accessCode,
       })
       .returning();
 
@@ -829,6 +918,7 @@ export const getDraftTournamentForEdit = createServerFn({ method: "GET" })
         numWeeks: tournament.numWeeks,
         numTeams: config.numTeams,
         status: tournament.status,
+        password: tournament.password || "",
       },
       selectedPlayerIds: config.selectedPlayerIds,
       playersCsv: config.playersCsv,
@@ -854,6 +944,7 @@ export const updateDraftTournament = createServerFn({ method: "POST" })
       selectedPlayerIds?: number[];
       selectedReserveIds?: number[];
       reservesCsv?: string;
+      password?: string;
       dinnerDutiesOrder?: string;
       cleanupDutiesOrder?: string;
       firstOnCourtOrder?: string;
@@ -870,6 +961,7 @@ export const updateDraftTournament = createServerFn({ method: "POST" })
       selectedPlayerIds = [],
       selectedReserveIds = [],
       reservesCsv,
+      password,
       dinnerDutiesOrder,
       cleanupDutiesOrder,
       firstOnCourtOrder,
@@ -926,15 +1018,168 @@ export const updateDraftTournament = createServerFn({ method: "POST" })
     };
 
     // Update tournament metadata and config
+    // Keep existing access code if not provided, generate one if there's none
+    let accessCode = password?.trim()?.toUpperCase();
+    if (!accessCode) {
+      // Check if there's an existing code
+      const existing = await db.query.tournaments.findFirst({
+        where: eq(tournaments.id, tournamentId),
+        columns: { password: true },
+      });
+      accessCode = existing?.password || await generateUniqueAccessCode();
+    }
+
     await db
       .update(tournaments)
       .set({
         name,
         numWeeks,
         configData: JSON.stringify(config),
+        password: accessCode,
         updatedAt: new Date(),
       })
       .where(eq(tournaments.id, tournamentId));
 
     return { success: true, tournamentId };
+  });
+
+// Check if a tournament requires access code
+export const checkTournamentAccess = createServerFn({ method: "GET" })
+  .inputValidator((data: { tournamentId?: number }) => data)
+  .handler(async ({ data }) => {
+    // Get tournament - either by ID or find the active one
+    const tournament = await db.query.tournaments.findFirst({
+      where: data?.tournamentId
+        ? eq(tournaments.id, data.tournamentId)
+        : eq(tournaments.status, "active"),
+      columns: {
+        id: true,
+        name: true,
+        password: true,
+      },
+    });
+
+    if (!tournament) {
+      return { found: false, requiresPassword: false, name: null, tournamentId: null };
+    }
+
+    return {
+      found: true,
+      requiresPassword: !!tournament.password,
+      name: tournament.name,
+      tournamentId: tournament.id,
+    };
+  });
+
+// Verify access code and return the tournament ID (code identifies the tournament)
+export const verifyAccessCode = createServerFn({ method: "POST" })
+  .inputValidator((data: { code: string }) => data)
+  .handler(async ({ data }) => {
+    const { code } = data;
+
+    if (!code?.trim()) {
+      return { success: false, error: "Please enter an access code" };
+    }
+
+    // Find tournament by access code (case-insensitive)
+    const tournament = await db.query.tournaments.findFirst({
+      where: sql`UPPER(${tournaments.password}) = ${code.toUpperCase().trim()}`,
+      columns: {
+        id: true,
+        name: true,
+        status: true,
+      },
+    });
+
+    if (!tournament) {
+      return { success: false, error: "Invalid access code" };
+    }
+
+    // Only allow access to active or ended tournaments (not drafts)
+    if (tournament.status === "draft") {
+      return { success: false, error: "Invalid access code" };
+    }
+
+    return {
+      success: true,
+      tournamentId: tournament.id,
+      tournamentName: tournament.name,
+    };
+  });
+
+// Legacy function for backward compatibility - verify password for a specific tournament
+export const verifyTournamentPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: { tournamentId: number; password: string }) => data)
+  .handler(async ({ data }) => {
+    const { tournamentId, password } = data;
+
+    const tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, tournamentId),
+      columns: {
+        password: true,
+      },
+    });
+
+    if (!tournament) {
+      return { success: false, error: "Tournament not found" };
+    }
+
+    if (!tournament.password) {
+      return { success: true };
+    }
+
+    // Case-insensitive comparison
+    if (tournament.password.toUpperCase() === password.toUpperCase()) {
+      return { success: true };
+    }
+
+    return { success: false, error: "Incorrect code" };
+  });
+
+// Update tournament password (admin function)
+export const updateTournamentPassword = createServerFn({ method: "POST" })
+  .inputValidator((data: { tournamentId: number; password: string | null }) => data)
+  .handler(async ({ data }) => {
+    const { tournamentId, password } = data;
+
+    const tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, tournamentId),
+    });
+
+    if (!tournament) {
+      throw new Error("Tournament not found");
+    }
+
+    // Always require an access code - generate one if cleared
+    const newCode = password?.trim()?.toUpperCase() || await generateUniqueAccessCode();
+
+    await db
+      .update(tournaments)
+      .set({
+        password: newCode,
+        updatedAt: new Date(),
+      })
+      .where(eq(tournaments.id, tournamentId));
+
+    return { success: true, password: newCode };
+  });
+
+// Get tournament password (admin function)
+export const getTournamentPassword = createServerFn({ method: "GET" })
+  .inputValidator((data: { tournamentId: number }) => data)
+  .handler(async ({ data }) => {
+    const { tournamentId } = data;
+
+    const tournament = await db.query.tournaments.findFirst({
+      where: eq(tournaments.id, tournamentId),
+      columns: {
+        password: true,
+      },
+    });
+
+    if (!tournament) {
+      throw new Error("Tournament not found");
+    }
+
+    return { password: tournament.password };
   });

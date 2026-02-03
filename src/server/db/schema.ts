@@ -28,6 +28,7 @@ export const tournaments = pgTable("tournaments", {
   status: tournamentStatusEnum("status").notNull().default("active"),
   configData: text("config_data"), // JSON config for draft tournaments (cleared on activation)
   weekDates: jsonb("week_dates").$type<WeekDates>(), // Maps week numbers to play dates
+  password: varchar("password", { length: 100 }), // Optional password for public access
   endedAt: timestamp("ended_at"), // When the tournament was ended
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -178,6 +179,14 @@ export const adminSettings = pgTable("admin_settings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Admin sessions table - stores session tokens for persistence across server restarts
+export const adminSessions = pgTable("admin_sessions", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
 // Relations
 export const tournamentsRelations = relations(tournaments, ({ many }) => ({
   teams: many(teams),
@@ -322,3 +331,5 @@ export type NewReserve = typeof reserves.$inferInsert;
 export type FirstOnCourt = typeof firstOnCourt.$inferSelect;
 export type NewFirstOnCourt = typeof firstOnCourt.$inferInsert;
 export type AdminSettings = typeof adminSettings.$inferSelect;
+export type AdminSession = typeof adminSessions.$inferSelect;
+export type NewAdminSession = typeof adminSessions.$inferInsert;

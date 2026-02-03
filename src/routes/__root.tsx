@@ -2,15 +2,26 @@
 import type { ReactNode } from "react";
 import {
   Outlet,
-  createRootRoute,
+  createRootRouteWithContext,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import appCss from "~/styles.css?url";
 import { DevBanner, isDev } from "~/components/ui/DevBanner";
-import { ThemeProvider, themeScript } from "~/lib/theme";
+import { ThemeProvider, themeScript, getThemeCookie } from "~/lib/theme";
 
-export const Route = createRootRoute({
+type Theme = "light" | "dark" | "system";
+
+interface RouterContext {
+  theme: Theme;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
+  beforeLoad: async () => {
+    // Get theme from cookie server-side
+    const theme = await getThemeCookie();
+    return { theme };
+  },
   head: () => ({
     meta: [
       {
@@ -41,18 +52,24 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  const { theme } = Route.useRouteContext();
+
   return (
-    <RootDocument>
-      <ThemeProvider>
+    <RootDocument theme={theme}>
+      <ThemeProvider initialTheme={theme}>
         <Outlet />
       </ThemeProvider>
     </RootDocument>
   );
 }
 
-function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+function RootDocument({ children, theme }: Readonly<{ children: ReactNode; theme: Theme }>) {
+  // Compute the resolved theme for SSR
+  // On server, we can't check system preference, so we default to light for "system"
+  const resolvedTheme = theme === "light" ? "light" : theme === "dark" ? "dark" : "";
+
   return (
-    <html lang="en">
+    <html lang="en" className={resolvedTheme} suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

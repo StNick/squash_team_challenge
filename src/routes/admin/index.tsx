@@ -8,6 +8,13 @@ import { Input } from "~/components/ui/Input";
 import { Card, CardContent, CardHeader } from "~/components/ui/Card";
 
 export const Route = createFileRoute("/admin/")({
+  beforeLoad: async () => {
+    // If already authenticated, redirect to dashboard
+    const { isAuthenticated } = await verifyAdminSession();
+    if (isAuthenticated) {
+      throw redirect({ to: "/admin/dashboard" });
+    }
+  },
   component: AdminLoginPage,
 });
 

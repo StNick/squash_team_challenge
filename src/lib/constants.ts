@@ -50,3 +50,5 @@ export type MatchPosition = (typeof MATCH_POSITIONS)[number];
 
 export const SESSION_COOKIE_NAME = "squash_admin_session";
 export const SESSION_EXPIRY_DAYS = 7;
+export const TOURNAMENT_ACCESS_STORAGE_KEY = "squash-tournament-access";
+export const THEME_COOKIE_NAME = "squash-theme";

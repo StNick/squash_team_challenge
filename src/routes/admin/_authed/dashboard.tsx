@@ -8,6 +8,7 @@ import {
   goBackWeek,
   getTournamentList,
   updateTournamentStatus,
+  updateTournamentAccessCode,
 } from "~/server/functions/tournament";
 import { Button } from "~/components/ui/Button";
 import { Card, CardContent, CardHeader } from "~/components/ui/Card";
@@ -54,6 +55,15 @@ function AdminDashboard() {
     weekNum?: number;
   } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>("");
+
+  // Access code modal state
+  const [accessCodeModal, setAccessCodeModal] = useState<{
+    tournamentId: number;
+    currentCode: string | null;
+  } | null>(null);
+  const [newAccessCode, setNewAccessCode] = useState<string>("");
+  const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
+  const [accessCodeLoading, setAccessCodeLoading] = useState(false);
 
   const openActivateModal = (tournamentId: number) => {
     setSelectedDate(toDateInputValue(new Date()));
@@ -126,6 +136,34 @@ function AdminDashboard() {
       alert(err instanceof Error ? err.message : "Failed to end tournament");
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const openAccessCodeModal = (tournamentId: number, currentCode: string | null) => {
+    setNewAccessCode(currentCode ?? "");
+    setAccessCodeError(null);
+    setAccessCodeModal({ tournamentId, currentCode });
+  };
+
+  const handleAccessCodeSave = async () => {
+    if (!accessCodeModal) return;
+
+    setAccessCodeError(null);
+    setAccessCodeLoading(true);
+
+    try {
+      await updateTournamentAccessCode({
+        data: {
+          tournamentId: accessCodeModal.tournamentId,
+          accessCode: newAccessCode.trim() || null, // null = generate new
+        },
+      });
+      router.invalidate();
+      setAccessCodeModal(null);
+    } catch (err) {
+      setAccessCodeError(err instanceof Error ? err.message : "Failed to update access code");
+    } finally {
+      setAccessCodeLoading(false);
     }
   };
 
@@ -294,7 +332,19 @@ function AdminDashboard() {
       {/* Tournament Info */}
       <Card>
         <CardHeader>
-          <h2 className="font-semibold text-gray-900 dark:text-white">{tournament.name}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="font-semibold text-gray-900 dark:text-white">{tournament.name}</h2>
+            <button
+              onClick={() => openAccessCodeModal(tournament.id, tournament.password ?? null)}
+              className="flex items-center gap-1.5 font-mono text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title="Edit access code"
+            >
+              {tournament.password ?? "No code"}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -411,7 +461,16 @@ function AdminDashboard() {
               <tbody>
                 {/* Current active tournament */}
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-green-50 dark:bg-green-900/20">
-                  <td className="py-2 px-4 dark:text-white font-medium">{tournament.name}</td>
+                  <td className="py-2 px-4 dark:text-white font-medium">
+                    <div className="flex items-center gap-2">
+                      {tournament.name}
+                      {tournament.password && (
+                        <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
+                          {tournament.password}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-2 px-4 text-center">
                     <span className="text-xs px-2 py-1 rounded bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400">
                       Active
@@ -530,6 +589,60 @@ function AdminDashboard() {
             </Button>
             <Button onClick={handleDateModalConfirm}>
               {dateModal?.type === "activate" ? "Activate" : "Advance Week"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Access Code Modal */}
+      <Modal
+        isOpen={accessCodeModal !== null}
+        onClose={() => setAccessCodeModal(null)}
+        title="Edit Access Code"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-gray-400">
+            Enter a new 6-character access code, or leave empty to generate a random one.
+          </p>
+          <div>
+            <Input
+              type="text"
+              value={newAccessCode}
+              onChange={(e) => setNewAccessCode(e.target.value.toUpperCase())}
+              placeholder="e.g., A76BN3"
+              className="w-full font-mono uppercase text-center text-lg tracking-widest"
+              maxLength={6}
+              autoFocus
+              disabled={accessCodeLoading}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+              6 alphanumeric characters (letters and numbers)
+            </p>
+          </div>
+
+          {accessCodeError && (
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-2 rounded">
+              {accessCodeError}
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="secondary"
+              onClick={() => setAccessCodeModal(null)}
+              disabled={accessCodeLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAccessCodeSave}
+              disabled={accessCodeLoading}
+            >
+              {accessCodeLoading
+                ? "Saving..."
+                : newAccessCode.trim()
+                  ? "Save"
+                  : "Generate Random"}
             </Button>
           </div>
         </div>

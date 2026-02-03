@@ -8,6 +8,7 @@ interface Tournament {
   status: TournamentStatus;
   currentWeek: number;
   numWeeks: number;
+  hasPassword?: boolean;
 }
 
 interface TournamentSelectorProps {
@@ -19,6 +20,7 @@ interface TournamentSelectorProps {
 /**
  * Dropdown selector for viewing different tournaments.
  * Only shows 'active' and 'ended' tournaments (not drafts).
+ * Shows a lock icon for password-protected tournaments.
  */
 export function TournamentSelector({
   tournaments,
@@ -42,7 +44,7 @@ export function TournamentSelector({
     >
       {visibleTournaments.map((t) => (
         <option key={t.id} value={t.id}>
-          {t.name}
+          {t.hasPassword ? "\u{1F512} " : ""}{t.name}
           {t.status === "active" ? " (Active)" : " (Ended)"}
         </option>
       ))}
