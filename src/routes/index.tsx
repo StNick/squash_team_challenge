@@ -38,9 +38,39 @@ function HomePage() {
   // Dashboard data (loaded after successful code entry or from stored access)
   const [dashboardData, setDashboardData] = useState<Awaited<ReturnType<typeof getDashboardData>> | null>(null);
 
-  // Check stored access code on mount
+  // Check for code in URL params or stored access on mount
   useEffect(() => {
-    const checkStoredAccess = async () => {
+    const checkAccess = async () => {
+      // First, check for code in URL query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCode = urlParams.get("code");
+
+      if (urlCode) {
+        try {
+          // Verify the URL code
+          const result = await verifyAccessCode({ data: { code: urlCode } });
+          if (result.success && result.tournamentId) {
+            // Valid code from URL - store it and load tournament
+            setStoredAccess(result.tournamentId, urlCode.toUpperCase());
+            const data = await getDashboardData({ data: { tournamentId: result.tournamentId } });
+            setDashboardData(data);
+
+            // Clean the URL by removing the code param (keeps the URL pretty)
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, "", cleanUrl);
+            setIsCheckingStored(false);
+            return;
+          }
+        } catch {
+          // Invalid URL code - fall through to check stored access
+        }
+
+        // Clean the invalid code from URL
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+
+      // Check stored access
       const stored = getStoredAccess();
       if (!stored) {
         setIsCheckingStored(false);
@@ -66,7 +96,7 @@ function HomePage() {
       }
     };
 
-    checkStoredAccess();
+    checkAccess();
   }, []);
 
   const handleAccessCodeSubmit = async (e: React.FormEvent) => {

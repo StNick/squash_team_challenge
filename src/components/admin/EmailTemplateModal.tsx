@@ -75,9 +75,13 @@ export function EmailTemplateModal({
     }
 
     // App URL and access code
+    // Link includes the code as a query param so clicking it auto-authenticates
+    const urlWithCode = accessCode
+      ? `http://www.squashteamchallenge.co.nz?code=${accessCode}`
+      : "http://www.squashteamchallenge.co.nz";
     sections.push(`
       <p style="margin: 0 0 8px 0;">
-        View the website at: <a href="http://www.squashteamchallenge.co.nz" style="color: #2563eb; text-decoration: underline;">www.squashteamchallenge.co.nz</a>
+        View the website at: <a href="${urlWithCode}" style="color: #2563eb; text-decoration: underline;">www.squashteamchallenge.co.nz</a>
       </p>
     `);
     if (accessCode) {
