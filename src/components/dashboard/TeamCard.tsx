@@ -4,10 +4,9 @@ import type { Team, Player } from "~/server/db/schema";
 
 interface TeamCardProps {
   team: Team & { players: Player[] };
-  rank?: number;
 }
 
-export function TeamCard({ team, rank }: TeamCardProps) {
+export function TeamCard({ team }: TeamCardProps) {
   const colors = getTeamColorClasses(team.color);
 
   return (
@@ -15,12 +14,7 @@ export function TeamCard({ team, rank }: TeamCardProps) {
       <CardHeader
         className={`${colors.bg} ${colors.text}`}
       >
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg">{team.name}</h3>
-          {rank !== undefined && (
-            <span className="text-sm opacity-80">#{rank + 1}</span>
-          )}
-        </div>
+        <h3 className="font-bold text-lg">{team.name}</h3>
         <div className="text-2xl font-bold mt-1">{team.totalScore} pts</div>
       </CardHeader>
       <CardContent className="p-3">

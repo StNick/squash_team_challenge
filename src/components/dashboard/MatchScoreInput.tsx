@@ -18,6 +18,7 @@ interface MatchScoreInputProps {
   teamBColor: string;
   onSubmit: (matchId: number, scoreA: number, scoreB: number) => Promise<void>;
   disabled?: boolean;
+  isFirstOnCourt?: boolean;
 }
 
 export function MatchScoreInput({
@@ -26,6 +27,7 @@ export function MatchScoreInput({
   teamBColor,
   onSubmit,
   disabled,
+  isFirstOnCourt,
 }: MatchScoreInputProps) {
   const [scoreA, setScoreA] = useState<string>(
     match.scoreA?.toString() ?? ""
@@ -181,6 +183,9 @@ export function MatchScoreInput({
       <div className="flex items-center justify-center gap-2">
         <div className="text-xs text-gray-500 dark:text-gray-400">
           Position {match.position}
+          {isFirstOnCourt && (
+            <span className="text-blue-600 dark:text-blue-400"> - First on Court (6:15 pm)</span>
+          )}
         </div>
         {handicapPct !== 0 && (
           <span className="text-xs px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded font-medium">

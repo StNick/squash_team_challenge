@@ -37,7 +37,7 @@ export function DutySchedule({ duties, currentWeek }: DutyScheduleProps) {
                 duty.week === currentWeek ? "bg-blue-50 dark:bg-blue-900/20" : ""
               }`}
             >
-              <td className="py-2 px-3">
+              <td className="py-2 px-3 whitespace-nowrap">
                 <span
                   className={`${
                     duty.week === currentWeek
@@ -53,25 +53,25 @@ export function DutySchedule({ duties, currentWeek }: DutyScheduleProps) {
                   )}
                 </span>
               </td>
-              <td className="py-2 px-3">
+              <td className="py-2 px-3 whitespace-nowrap">
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: duty.dinnerTeam.color }}
                   />
                   <span className="dark:text-gray-200">{duty.dinnerTeam.name}</span>
                 </div>
               </td>
-              <td className="py-2 px-3">
+              <td className="py-2 px-3 whitespace-nowrap">
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: duty.cleanupTeam.color }}
                   />
                   <span className="dark:text-gray-200">{duty.cleanupTeam.name}</span>
                 </div>
               </td>
-              <td className="py-2 px-3">
+              <td className="py-2 px-3 whitespace-nowrap">
                 {duty.firstOnCourt ? (
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     Position {duty.firstOnCourt}

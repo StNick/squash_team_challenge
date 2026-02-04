@@ -10,6 +10,8 @@ import { StandingsTable } from "~/components/dashboard/StandingsTable";
 import { WeeklyStandingsTable } from "~/components/dashboard/WeeklyStandingsTable";
 import { DutySchedule } from "~/components/dashboard/DutySchedule";
 import { ReserveModal } from "~/components/dashboard/ReserveModal";
+import { RulesModal } from "~/components/dashboard/RulesModal";
+import { PlayerStatsTable } from "~/components/dashboard/PlayerStatsTable";
 import { Button } from "~/components/ui/Button";
 import { Card, CardContent, CardHeader } from "~/components/ui/Card";
 import { Input } from "~/components/ui/Input";
@@ -24,7 +26,8 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const router = useRouter();
   const [showReserveModal, setShowReserveModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<"matches" | "standings">("matches");
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"matches" | "stats">("matches");
 
   // Access code state
   const [accessCode, setAccessCode] = useState("");
@@ -238,7 +241,7 @@ function HomePage() {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 {tournament.name}
@@ -253,7 +256,14 @@ function HomePage() {
                 {isEnded && <span className="ml-2 text-amber-600 dark:text-amber-400">(Ended)</span>}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowRulesModal(true)}
+              >
+                Rules
+              </Button>
               {isActive && (
                 <Button
                   variant="secondary"
@@ -269,7 +279,7 @@ function HomePage() {
                 onClick={handleChangeTournament}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
-                Change Tournament
+                Exit
               </Button>
               <ThemeToggle />
               <Link
@@ -289,7 +299,7 @@ function HomePage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Teams</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {tournament.standings.map((team, index) => (
-              <TeamCard key={team.id} team={team} rank={index} />
+              <TeamCard key={team.id} team={team} />
             ))}
           </div>
         </section>
@@ -309,7 +319,7 @@ function HomePage() {
 
         {/* Tab Navigation (Mobile) */}
         <div className="flex border-b border-gray-200 dark:border-gray-700 sm:hidden">
-          {(["matches", "standings"] as const).map((tab) => (
+          {(["matches", "stats"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -341,6 +351,7 @@ function HomePage() {
                 matchup={matchup}
                 onSubmitScore={handleSubmitScore}
                 disabled={isEnded}
+                firstOnCourt={currentWeekData?.firstOnCourt}
               />
             ))}
           </div>
@@ -349,7 +360,7 @@ function HomePage() {
           <div className="space-y-6">
             {/* Weekly Standings */}
             <Card
-              className={activeTab !== "standings" ? "hidden sm:block" : ""}
+              className={activeTab !== "stats" ? "hidden sm:block" : ""}
             >
               <CardHeader>
                 <h2 className="font-semibold text-gray-900 dark:text-white">
@@ -366,13 +377,28 @@ function HomePage() {
 
             {/* Overall Standings */}
             <Card
-              className={activeTab !== "standings" ? "hidden sm:block" : ""}
+              className={activeTab !== "stats" ? "hidden sm:block" : ""}
             >
               <CardHeader>
                 <h2 className="font-semibold text-gray-900 dark:text-white">Overall Standings</h2>
               </CardHeader>
               <CardContent className="p-0">
                 <StandingsTable teams={tournament.standings} />
+              </CardContent>
+            </Card>
+
+            {/* Player Stats */}
+            <Card
+              className={activeTab !== "stats" ? "hidden sm:block" : ""}
+            >
+              <CardHeader>
+                <h2 className="font-semibold text-gray-900 dark:text-white">Player Stats</h2>
+              </CardHeader>
+              <CardContent className="p-0">
+                <PlayerStatsTable
+                  weeklyData={tournament.weeklyData}
+                  teams={tournament.teams}
+                />
               </CardContent>
             </Card>
           </div>
@@ -426,13 +452,13 @@ function HomePage() {
                             {matchup.matches.map((match) => (
                               <div
                                 key={match.id}
-                                className="flex justify-between"
+                                className="grid grid-cols-[1fr_auto_1fr] gap-2"
                               >
-                                <span>{match.playerA.name}</span>
-                                <span>
+                                <span className="text-right">{match.playerA.name}</span>
+                                <span className="text-center w-14">
                                   {match.scoreA ?? "-"} - {match.scoreB ?? "-"}
                                 </span>
-                                <span>{match.playerB.name}</span>
+                                <span className="text-left">{match.playerB.name}</span>
                               </div>
                             ))}
                           </div>
@@ -453,6 +479,12 @@ function HomePage() {
         onClose={() => setShowReserveModal(false)}
         reserves={tournament.reserves}
         tournamentStatus={tournament.status}
+      />
+
+      {/* Rules Modal */}
+      <RulesModal
+        isOpen={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
       />
     </div>
   );

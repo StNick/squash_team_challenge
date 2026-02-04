@@ -549,7 +549,7 @@ Spencer Craft,021 174 7700,850000`}
           </summary>
           <div className="mt-4 space-y-4 pl-6">
             <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-              These fields are optional. Leave them blank and the app will automatically generate a balanced schedule.
+              These fields are optional. Leave them blank to automatically generate a balanced schedule.
               Only use these if you're importing a pre-existing tournament setup.
             </p>
 

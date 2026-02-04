@@ -16,6 +16,7 @@ import { Input } from "~/components/ui/Input";
 import { Modal } from "~/components/ui/Modal";
 import { Link } from "@tanstack/react-router";
 import { formatWeekDate } from "~/lib/utils";
+import { EmailTemplateModal } from "~/components/admin/EmailTemplateModal";
 
 export const Route = createFileRoute("/admin/_authed/dashboard")({
   loader: async () => {
@@ -64,6 +65,7 @@ function AdminDashboard() {
   const [newAccessCode, setNewAccessCode] = useState<string>("");
   const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
   const [accessCodeLoading, setAccessCodeLoading] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   const openActivateModal = (tournamentId: number) => {
     setSelectedDate(toDateInputValue(new Date()));
@@ -441,6 +443,19 @@ function AdminDashboard() {
             </CardContent>
           </Card>
         </Link>
+
+        <Card
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => setShowEmailModal(true)}
+        >
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl mb-2">📧</div>
+            <h3 className="font-semibold dark:text-white">Generate Email</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Create weekly email template
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tournament Management */}
@@ -647,6 +662,15 @@ function AdminDashboard() {
           </div>
         </div>
       </Modal>
+
+      {/* Email Template Modal */}
+      <EmailTemplateModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        currentWeek={tournament.currentWeek}
+        weeklyData={tournament.weeklyData}
+        accessCode={tournament.password}
+      />
     </div>
   );
 }
