@@ -138,7 +138,7 @@ export function EmailTemplateModal({
       }
 
       sections.push(`
-        <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+        <table style="border-collapse: collapse; max-width: 500px; margin-bottom: 16px;">
           <tbody>${matchRows.join("")}</tbody>
         </table>
       `);
@@ -166,7 +166,7 @@ export function EmailTemplateModal({
             <span style="margin: 0 8px; color: #6b7280;">vs</span>
             ${teamBadge(matchup.teamB.name, matchup.teamB.color)}
           </p>
-          <table style="border-collapse: collapse; width: 100%;">
+          <table style="border-collapse: collapse; max-width: 500px;">
             <tbody>${matchRows.join("")}</tbody>
           </table>
         </div>
