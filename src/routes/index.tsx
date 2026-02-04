@@ -479,18 +479,38 @@ function HomePage() {
                             </div>
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
-                            {matchup.matches.map((match) => (
-                              <div
-                                key={match.id}
-                                className="grid grid-cols-[1fr_auto_1fr] gap-2"
-                              >
-                                <span className="text-right">{match.playerA.name}</span>
-                                <span className="text-center w-14">
-                                  {match.scoreA ?? "-"} - {match.scoreB ?? "-"}
-                                </span>
-                                <span className="text-left">{match.playerB.name}</span>
-                              </div>
-                            ))}
+                            {matchup.matches.map((match) => {
+                              const displayNameA = match.substituteA?.name ?? match.customSubstituteAName ?? match.playerA.name;
+                              const displayNameB = match.substituteB?.name ?? match.customSubstituteBName ?? match.playerB.name;
+                              const isSubA = !!match.substituteA || !!match.customSubstituteAName;
+                              const isSubB = !!match.substituteB || !!match.customSubstituteBName;
+                              return (
+                                <div
+                                  key={match.id}
+                                  className="grid grid-cols-[1fr_auto_1fr] gap-2"
+                                >
+                                  <span className="text-right flex items-center justify-end gap-1">
+                                    {isSubA && (
+                                      <span className="text-[10px] px-1 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded font-bold">
+                                        SUB
+                                      </span>
+                                    )}
+                                    {displayNameA}
+                                  </span>
+                                  <span className="text-center w-14">
+                                    {match.scoreA ?? "-"} - {match.scoreB ?? "-"}
+                                  </span>
+                                  <span className="text-left flex items-center gap-1">
+                                    {displayNameB}
+                                    {isSubB && (
+                                      <span className="text-[10px] px-1 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded font-bold">
+                                        SUB
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
