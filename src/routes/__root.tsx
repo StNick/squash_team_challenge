@@ -34,11 +34,32 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       {
         title: "Squash Team Challenge",
       },
+      {
+        name: "theme-color",
+        content: "#16a34a",
+      },
+      {
+        name: "apple-mobile-web-app-capable",
+        content: "yes",
+      },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "manifest",
+        href: "/manifest.json",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/icons/icon-192x192.png",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        href: "/icons/icon-192x192.png",
       },
     ],
     scripts: [
