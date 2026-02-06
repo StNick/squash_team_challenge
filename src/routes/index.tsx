@@ -248,9 +248,11 @@ function HomePage() {
     scoreA: number,
     scoreB: number
   ) => {
-    if (isEnded) return;
+    if (isEnded || !tournament) return;
     await submitMatchScore({ data: { matchId, scoreA, scoreB } });
-    router.invalidate();
+    // Re-fetch dashboard data to show updated scores
+    const data = await getDashboardData({ data: { tournamentId: tournament.id } });
+    setDashboardData(data);
   };
 
   return (

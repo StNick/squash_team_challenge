@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "~/components/ui/Input";
 import { Button } from "~/components/ui/Button";
 import { Modal } from "~/components/ui/Modal";
+import { LiveScoringApp } from "~/components/scoring/LiveScoringApp";
 import { getTeamTextColor, TEAM_COLORS } from "~/lib/constants";
 import type { Match, Player, Reserve } from "~/server/db/schema";
 
@@ -38,9 +39,20 @@ export function MatchScoreInput({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showLiveScoring, setShowLiveScoring] = useState(false);
 
   const hasExistingScores = match.scoreA !== null && match.scoreB !== null;
   const inputsDisabled = disabled || isSubmitting || hasExistingScores;
+
+  // Sync local state when match scores are updated (e.g., after LiveScoringApp submission)
+  useEffect(() => {
+    if (match.scoreA !== null) {
+      setScoreA(match.scoreA.toString());
+    }
+    if (match.scoreB !== null) {
+      setScoreB(match.scoreB.toString());
+    }
+  }, [match.scoreA, match.scoreB]);
   const canSubmit =
     !disabled &&
     !hasExistingScores &&
@@ -345,16 +357,26 @@ export function MatchScoreInput({
         </div>
       )}
 
-      {/* Submit button */}
+      {/* Submit button and Score Live button */}
       {!hasExistingScores && (
-        <Button
-          onClick={handleSubmitClick}
-          disabled={!canSubmit || isSubmitting}
-          size="sm"
-          className="w-full mt-1"
-        >
-          {isSubmitting ? "Saving..." : "Submit Score"}
-        </Button>
+        <div className="flex gap-2 mt-1">
+          <Button
+            size="sm"
+            onClick={() => setShowLiveScoring(true)}
+            disabled={disabled}
+            className="whitespace-nowrap bg-green-600 hover:bg-green-700 focus:ring-green-500"
+          >
+            Score Live
+          </Button>
+          <Button
+            onClick={handleSubmitClick}
+            disabled={!canSubmit || isSubmitting}
+            size="sm"
+            className="flex-1"
+          >
+            {isSubmitting ? "Saving..." : "Submit Score"}
+          </Button>
+        </div>
       )}
 
       {error && <div className="text-xs text-red-600 dark:text-red-400 text-center">{error}</div>}
@@ -409,6 +431,21 @@ export function MatchScoreInput({
           </div>
         </div>
       </Modal>
+
+      {/* Live Scoring App */}
+      {showLiveScoring && (
+        <LiveScoringApp
+          match={{
+            id: match.id,
+            playerA: { name: displayNameA, teamColor: teamAColor },
+            playerB: { name: displayNameB, teamColor: teamBColor },
+          }}
+          onClose={() => setShowLiveScoring(false)}
+          onMatchComplete={async (matchId, finalScoreA, finalScoreB) => {
+            await onSubmit(matchId, finalScoreA, finalScoreB);
+          }}
+        />
+      )}
     </div>
   );
 }
